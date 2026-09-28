@@ -238,3 +238,41 @@ details summary { cursor: pointer; font-size: 12px; color: var(--accent); margin
 .ops-app[data-theme="light"] .toast { background: #d9ecda; color: #146314; border-color: #146314; }
 /* ================= Version sombre : badges lisibles ================= */
 .ops-app[data-theme="dark"] .rail-links .badge-n { background: #e4002b; color: #fff; }
+
+/* ================= Écran de connexion ================= */
+.login-wrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #0a2240;
+  padding: 20px;
+  font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+}
+.login-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 34px 30px;
+  width: 400px;
+  max-width: 100%;
+  color: #16283d;
+  box-shadow: 0 30px 80px #0008;
+}
+.login-card h1 { font-size: 22px; margin: 18px 0 6px; color: #0a2240; }
+.login-card .muted { color: #5d7186; font-size: 12px; line-height: 1.6; }
+.login-card label.muted { display: block; margin-top: 16px; }
+.login-card .pwd-row { display: flex; gap: 8px; margin-top: 6px; }
+.login-card input {
+  flex: 1; border: 1px solid #dde5ef; border-radius: 8px;
+  padding: 10px 12px; font-size: 14px; font-family: inherit; color: #0a2240;
+}
+.login-card .icon-btn { background: #e7edf4; border: 0; border-radius: 8px; padding: 0 12px; cursor: pointer; color: #0a2240; }
+.login-card .primary {
+  border: 0; border-radius: 8px; padding: 12px 16px; margin-top: 16px;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  background: #e4002b; color: #fff;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+}
+.login-card .primary.big { font-size: 14px; }
+.login-card .full { width: 100%; }
+.login-card .primary:disabled { background: #b9c6d8; cursor: not-allowed; }
+.login-card .error-text { font-size: 12px; color: #a3121f; margin-top: 10px; display: flex; gap: 6px; align-items: center; }

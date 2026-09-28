@@ -17,6 +17,10 @@ import {
   Sun,
   Moon,
   ShieldCheck,
+  Lock,
+  LogOut,
+  Eye,
+  EyeOff,
   X,
 } from "lucide-react";
 import Logo from "@/components/Logo";
@@ -115,6 +119,11 @@ export default function Home() {
   const [author, setAuthor] = useState("");
   const [limit, setLimit] = useState(200);
   const [busy, setBusy] = useState(false);
+  // Accès par mot de passe (barrière locale, mémoire de session par onglet).
+  const [authed, setAuthed] = useState(false);
+  const [pwd, setPwd] = useState("");
+  const [pwdErr, setPwdErr] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
 
   // Thème persisté (le sélecteur dark/light restait purement visuel).
   useEffect(() => {
@@ -123,6 +132,7 @@ export default function Home() {
       if (t === "light" || t === "dark") setTheme(t);
       const a = localStorage.getItem("croisement-author") || "";
       if (a) setAuthor(a);
+      if (sessionStorage.getItem("croisement-auth") === "1") setAuthed(true);
     } catch {}
   }, []);
   useEffect(() => {
@@ -138,6 +148,29 @@ export default function Home() {
     try {
       localStorage.setItem("croisement-author", v);
     } catch {}
+  }
+
+  function login() {
+    if (pwd === "agl123") {
+      try {
+        sessionStorage.setItem("croisement-auth", "1");
+      } catch {}
+      setAuthed(true);
+      setPwd("");
+      setPwdErr("");
+    } else {
+      setPwdErr("Mot de passe incorrect.");
+    }
+  }
+
+  function logout() {
+    try {
+      sessionStorage.removeItem("croisement-auth");
+    } catch {}
+    setAuthed(false);
+    setPwd("");
+    setPwdErr("");
+    setTab("pilotage");
   }
 
   function handleLaunch(record: Record<Source, LoadedSource | null>, files: string[]) {
@@ -444,6 +477,41 @@ export default function Home() {
     sources.spot && { key: "SPOT", file: sources.spot.fileName, rows: spotRows.length, cov: coverage(sources.spot.map), range: minMax(spotRows.map((f) => f.date)), vital: false },
   ].filter(Boolean) as { key: string; file: string; rows: number; cov: { mapped: number; total: number; pct: number }; range: { min: string; max: string }; vital: boolean }[];
 
+  if (!authed) {
+    return (
+      <div className="login-wrap">
+        <div className="login-card">
+          <Logo theme="dark" title="Croisement Import" sub="GUCE · SPOT · OpenTrade" />
+          <h1>Accès protégé</h1>
+          <p className="muted">Saisissez le mot de passe pour accéder à la plateforme de croisement.</p>
+          <label className="muted">
+            Mot de passe
+            <span className="pwd-row">
+              <input
+                type={showPwd ? "text" : "password"}
+                value={pwd}
+                onChange={(e) => { setPwd(e.target.value); setPwdErr(""); }}
+                onKeyDown={(e) => { if (e.key === "Enter") login(); }}
+                placeholder="••••••"
+                autoFocus
+              />
+              <button className="icon-btn" onClick={() => setShowPwd(!showPwd)} title={showPwd ? "Masquer" : "Afficher"} aria-label="Afficher le mot de passe">
+                {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </span>
+          </label>
+          {pwdErr && <p className="error-text"><Lock size={13} /> {pwdErr}</p>}
+          <button className="primary big full" onClick={login} disabled={!pwd}>
+            <Lock size={15} /> Se connecter
+          </button>
+          <p className="muted" style={{ marginTop: 14 }}>
+            <ShieldCheck size={13} /> Session locale par onglet — la déconnexion se fait via l&apos;icône en haut à droite.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="ops-app" data-theme={theme}>
       <aside className="rail" aria-label="Navigation principale">
@@ -495,6 +563,9 @@ export default function Home() {
             </span>
             <button className="outline" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} title={theme === "dark" ? "Passer en thème clair" : "Passer en thème sombre"}>
               {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+            <button className="outline" onClick={logout} title="Se déconnecter">
+              <LogOut size={15} />
             </button>
             <button className="outline" onClick={exportWord} disabled={busy || !loaded}>
               <FileText size={15} /> Word
