@@ -10,7 +10,8 @@ import {
   TextRun,
   WidthType,
 } from "docx";
-import type { FdiCross, GuceRow, Insight, RfcvCross } from "./cross";
+import type { FdiCross, GuceRow, Insight, RfcvCross, SpotRow } from "./cross";
+import { buildInterpretation, buildMetadata, type ReportMeta } from "./report-content";
 
 export type WordReportInput = {
   at: string;
@@ -19,7 +20,9 @@ export type WordReportInput = {
   fdiSansGuce: FdiCross[];
   rfcvSansGuce: RfcvCross[];
   orphelins: GuceRow[];
+  spotSansRfcv: SpotRow[];
   insights: Insight[];
+  meta: ReportMeta;
 };
 
 const NAVY = "0A2240";
@@ -61,7 +64,7 @@ function table(widths: number[], header: string[], rows: string[][]) {
   });
 }
 
-/** Rapport Word : synthèse + écarts FDI/RFCV + orphelins GUCE + insights. */
+/** Rapport Word : synthèse + écarts + interprétation détaillée + métadonnées. */
 export async function buildWordReport(input: WordReportInput): Promise<Blob> {
   const fdiRows = input.fdiSansGuce.slice(0, 200).map((f) => [
     f.row.numeroFdi || "—",
@@ -86,6 +89,14 @@ export async function buildWordReport(input: WordReportInput): Promise<Blob> {
     g.statut || "—",
     g.dateCreation || "—",
   ]);
+  const spotRows = input.spotSansRfcv.slice(0, 200).map((s) => [
+    s.dossier || "—",
+    s.client || "—",
+    s.facture || "—",
+    s.date || "—",
+  ]);
+  const interpRows = buildInterpretation(input.kpis).map((b) => [b.indicateur, `${b.valeur}\n${b.lecture}\n→ ${b.action}`]);
+  const metaRows = buildMetadata(input.meta).map(([k, v]) => [k, v]);
   const doc = new Document({
     sections: [
       {
@@ -177,6 +188,48 @@ export async function buildWordReport(input: WordReportInput): Promise<Blob> {
             ["NUMERO", "MODULE", "IMPORTATEUR", "STATUT", "CRÉÉ LE"],
             orphRows,
           ),
+          new Paragraph({
+            heading: HeadingLevel.HEADING_1,
+            children: [new TextRun({ text: "6 · Dossiers SPOT sans RFCV", color: NAVY })],
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `${input.spotSansRfcv.length} dossiers SPOT qu'aucun RFCV ne réclame${spotRows.length < input.spotSansRfcv.length ? ` (${spotRows.length} premiers affichés)` : ""} : hors périmètre RFCV ou RFCV non encore saisi.`,
+                size: 20,
+                color: GREY,
+              }),
+            ],
+          }),
+          table([1700, 2800, 2000, 1600], ["DOSSIER", "CLIENT", "FACTURE", "DATE"], spotRows),
+          new Paragraph({
+            heading: HeadingLevel.HEADING_1,
+            children: [new TextRun({ text: "7 · Interprétation détaillée — guide de lecture", color: RED })],
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Chaque indicateur : valeur constatée, comment l'interpréter, action recommandée.",
+                size: 20,
+                color: GREY,
+              }),
+            ],
+          }),
+          table([2200, 7400], ["Indicateur", "Valeur · lecture · action"], interpRows),
+          new Paragraph({
+            heading: HeadingLevel.HEADING_1,
+            children: [new TextRun({ text: "8 · Métadonnées & traçabilité", color: NAVY })],
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Fichiers sources, clés de jointure, normalisation, seuils : tout ce qui permet de reproduire et d'auditer ce rapport.",
+                size: 20,
+                color: GREY,
+              }),
+            ],
+          }),
+          table([2600, 7000], ["Champ", "Valeur"], metaRows),
         ],
       },
     ],

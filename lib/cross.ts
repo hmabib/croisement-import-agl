@@ -400,6 +400,64 @@ export function guceOrphelins(guce: GuceRow[], fdiKeys: Set<string>, rfcvKeys: S
   });
 }
 
+/** SPOT sans RFCV : dossiers SPOT qu'aucun RFCV ne réclame (sens inverse). */
+export function spotSansRfcv(spot: SpotRow[], rfcvSpotKeys: Set<string>): SpotRow[] {
+  return spot.filter((s) => {
+    const k = keyDossier(s.dossier);
+    if (!k) return false;
+    return !rfcvSpotKeys.has(k);
+  });
+}
+
+// ---------- Recherche par numéro (unifiée, tous états) ----------
+export type NumeroSearch = {
+  guce: GuceRow[];
+  fdi: FdiCross[];
+  rfcv: RfcvCross[];
+  spot: SpotRow[];
+};
+
+/** Un N° (FDI, RFCV, Transaction, dossier SPOT, facture, référence) → hits dans les 4 états. */
+export function searchNumero(
+  q: string,
+  guce: GuceRow[],
+  fdi: FdiCross[],
+  rfcv: RfcvCross[],
+  spot: SpotRow[],
+  max = 60,
+): NumeroSearch {
+  const out: NumeroSearch = { guce: [], fdi: [], rfcv: [], spot: [] };
+  const nq = norm(q);
+  if (!nq) return out;
+  const k = keyNumero(q);
+  const kd = keyDossier(q);
+  const hit = (v: unknown) => {
+    const nv = norm(v);
+    if (!nv) return false;
+    if (k && (keyNumero(v) === k || (nv.startsWith("rcs") && keyNumero(v) === k))) return true;
+    if (kd && kd.length >= 4 && keyDossier(v) === kd) return true;
+    return nq.length >= 3 && nv.includes(nq);
+  };
+  for (const g of guce) {
+    if (out.guce.length >= max) break;
+    if (hit(g.numero) || hit(g.codeImportateur)) out.guce.push(g);
+  }
+  for (const f of fdi) {
+    if (out.fdi.length >= max) break;
+    if (hit(f.row.numeroFdi) || hit(f.row.reference) || hit(f.row.facture)) out.fdi.push(f);
+  }
+  for (const f of rfcv) {
+    if (out.rfcv.length >= max) break;
+    if (hit(f.row.numeroRfcv) || hit(f.row.transaction) || hit(f.row.dossierSpot) || hit(f.row.reference) || hit(f.row.facture))
+      out.rfcv.push(f);
+  }
+  for (const s of spot) {
+    if (out.spot.length >= max) break;
+    if (hit(s.dossier) || hit(s.facture) || hit(s.tcd)) out.spot.push(s);
+  }
+  return out;
+}
+
 // ---------- Stats / insights ----------
 export function countBy<T>(rows: T[], fn: (r: T) => string): { label: string; count: number }[] {
   const m = new Map<string, number>();
@@ -510,6 +568,43 @@ export function buildInsights(
   if (!out.length)
     out.push({ level: "ok", title: "Croisement sain", detail: "Tout est rapproché, aucun écart détecté.", count: 0 });
   return out;
+}
+
+// ---------- Reconnaissance auto de source (chargeur groupé) ----------
+// Score = champs reconnus / champs attendus + bonus de signature.
+// Seuil 0.30 en-dessous → "inconnu" (l'opérateur assigne manuellement).
+export type SourceScore = { source: SourceName; score: number; matched: number; total: number };
+
+export function recognizeSource(header: string[]): { best: SourceName | "inconnu"; scores: SourceScore[] } {
+  const defs: { source: SourceName; map: FieldMap }[] = [
+    { source: "guce", map: mapGuce(header).map },
+    { source: "fdi", map: mapFdi(header).map },
+    { source: "rfcv", map: mapRfcv(header).map },
+    { source: "spot", map: mapSpot(header).map },
+  ];
+  const scores = defs
+    .map(({ source, map }) => {
+      const keys = Object.keys(map);
+      const matched = keys.filter((k) => map[k] != null).length;
+      let score = keys.length ? matched / keys.length : 0;
+      if (source === "guce" && map.numero != null && map.module != null && map.statut != null) score += 0.25;
+      if (source === "fdi" && map.numeroFdi != null) score += 0.3;
+      if (source === "rfcv" && (map.transaction != null || map.numeroRfcv != null) && map.dossierSpot != null)
+        score += 0.3;
+      return { source, score, matched, total: keys.length };
+    })
+    .sort((a, b) => b.score - a.score);
+  return { best: scores[0].score >= 0.3 ? scores[0].source : "inconnu", scores };
+}
+
+export function mapFnFor(source: SourceName): (header: string[]) => { map: FieldMap; unmapped: string[] } {
+  return source === "guce" ? mapGuce : source === "fdi" ? mapFdi : source === "rfcv" ? mapRfcv : mapSpot;
+}
+
+export function coverage(map: FieldMap): { mapped: number; total: number; pct: number } {
+  const keys = Object.keys(map);
+  const mapped = keys.filter((k) => map[k] != null).length;
+  return { mapped, total: keys.length, pct: keys.length ? Math.round((mapped / keys.length) * 100) : 0 };
 }
 
 // ---------- Filtres ----------

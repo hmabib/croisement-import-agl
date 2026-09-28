@@ -1,24 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   LayoutDashboard,
+  Gauge,
   FileCheck2,
   FileWarning,
   Database,
+  AlertTriangle,
+  Search,
   Table2,
   Lightbulb,
   Upload,
   Download,
   FileText,
-  Search,
   Sun,
   Moon,
   ShieldCheck,
   X,
 } from "lucide-react";
 import Logo from "@/components/Logo";
-import SourceImporter, { type LoadedSource } from "@/components/SourceImporter";
+import BulkImporter, { effectiveSource, type LoadedSource, type StagedFile } from "@/components/BulkImporter";
 import { Bars, Donut } from "@/components/Charts";
 import {
   buildFdi,
@@ -27,30 +29,34 @@ import {
   buildRfcv,
   buildSpot,
   countBy,
+  coverage,
   crossFdi,
   crossRfcv,
   guceOrphelins,
   inDateRange,
   keyDossier,
   keyNumero,
-  mapFdi,
-  mapGuce,
-  mapRfcv,
-  mapSpot,
   matchSearch,
   norm,
+  searchNumero,
+  spotSansRfcv,
   type FdiCross,
   type RfcvCross,
 } from "@/lib/cross";
 import "./operations.css";
 
-type Tab = "pilotage" | "fdi" | "rfcv" | "spot" | "dossiers" | "insights" | "imports";
+type Tab =
+  | "pilotage" | "supervision" | "fdi" | "rfcv" | "spot"
+  | "ecarts" | "recherche" | "dossiers" | "insights" | "imports";
 
 const NAV: { id: Tab; icon: typeof LayoutDashboard; label: string; group: string }[] = [
   { id: "pilotage", icon: LayoutDashboard, label: "Pilotage", group: "Suivi" },
+  { id: "supervision", icon: Gauge, label: "Supervision", group: "Suivi" },
   { id: "fdi", icon: FileCheck2, label: "FDI × GUCE", group: "Croisements" },
   { id: "rfcv", icon: FileWarning, label: "RFCV × GUCE × SPOT", group: "Croisements" },
   { id: "spot", icon: Database, label: "SPOT", group: "Croisements" },
+  { id: "ecarts", icon: AlertTriangle, label: "Écarts / Absents", group: "Écarts" },
+  { id: "recherche", icon: Search, label: "Recherche N°", group: "Écarts" },
   { id: "dossiers", icon: Table2, label: "Dossiers", group: "Données" },
   { id: "insights", icon: Lightbulb, label: "Insights", group: "Données" },
   { id: "imports", icon: Upload, label: "Imports", group: "Données" },
@@ -58,12 +64,15 @@ const NAV: { id: Tab; icon: typeof LayoutDashboard; label: string; group: string
 
 const TITLES: Record<Tab, string> = {
   pilotage: "Pilotage du croisement",
+  supervision: "Supervision du pipeline",
   fdi: "FDI OpenTrade × GUCE",
   rfcv: "RFCV OpenTrade × GUCE × SPOT",
   spot: "Extraction SPOT",
+  ecarts: "Écarts — absents de chaque état",
+  recherche: "Recherche par numéro",
   dossiers: "Dossiers · table unifiée",
   insights: "Insights automatiques",
-  imports: "Imports · chargement manuel local",
+  imports: "Imports · chargement groupé local",
 };
 
 const ETAT_FDI: Record<FdiCross["etat"], string> = {
@@ -77,16 +86,24 @@ const ETAT_RFCV: Record<RfcvCross["etat"], string> = {
   "sans-numero": "Sans N° RFCV",
 };
 
+function minMax(dates: string[]): { min: string; max: string } {
+  const ds = dates.filter(Boolean).sort();
+  return { min: ds[0] || "—", max: ds[ds.length - 1] || "—" };
+}
+
 export default function Home() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [tab, setTab] = useState<Tab>("pilotage");
-  const [sources, setSources] = useState<Record<string, LoadedSource | null>>({
+  const [sources, setSources] = useState<Record<Source, LoadedSource | null>>({
     guce: null,
     fdi: null,
     rfcv: null,
     spot: null,
   });
+  const [staged, setStaged] = useState<StagedFile[]>([]);
+  const [launch, setLaunch] = useState<{ at: string; files: string[] } | null>(null);
   const [search, setSearch] = useState("");
+  const [numeroQ, setNumeroQ] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [etape, setEtape] = useState("all");
@@ -99,10 +116,45 @@ export default function Home() {
   const [limit, setLimit] = useState(200);
   const [busy, setBusy] = useState(false);
 
-  const setSrc = (name: string, s: LoadedSource | null) =>
-    setSources((p) => ({ ...p, [name]: s }));
+  // Thème persisté (le sélecteur dark/light restait purement visuel).
+  useEffect(() => {
+    try {
+      const t = localStorage.getItem("croisement-theme");
+      if (t === "light" || t === "dark") setTheme(t);
+      const a = localStorage.getItem("croisement-author") || "";
+      if (a) setAuthor(a);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem("croisement-theme", theme);
+    } catch {}
+  }, [theme]);
+  useEffect(() => {
+    setLimit(200);
+  }, [tab]);
+  function setAuthorPersist(v: string) {
+    setAuthor(v);
+    try {
+      localStorage.setItem("croisement-author", v);
+    } catch {}
+  }
 
-  // ---------- Jeux de données typés ----------
+  function handleLaunch(record: Record<Source, LoadedSource | null>, files: string[]) {
+    setSources((p) => ({
+      guce: record.guce ?? p.guce,
+      fdi: record.fdi ?? p.fdi,
+      rfcv: record.rfcv ?? p.rfcv,
+      spot: record.spot ?? p.spot,
+    }));
+    setLaunch({ at: new Date().toISOString(), files });
+    setStaged([]);
+    resetFilters();
+    setNotice(`Croisement lancé : ${files.join(" · ")}. Résultats dans Supervision et Pilotage.`);
+    setTab("supervision");
+  }
+
+  // ---------- Jeux de données typés (actifs = lancés, pas les staged) ----------
   const guceRows = useMemo(
     () => (sources.guce ? buildGuce(sources.guce.rows, sources.guce.map) : []),
     [sources.guce],
@@ -116,8 +168,7 @@ export default function Home() {
     [sources.rfcv],
   );
   const spotRows = useMemo(
-    () =>
-      sources.spot ? buildSpot(sources.spot.header, sources.spot.rows, sources.spot.map) : [],
+    () => (sources.spot ? buildSpot(sources.spot.header, sources.spot.rows, sources.spot.map) : []),
     [sources.spot],
   );
 
@@ -147,6 +198,10 @@ export default function Home() {
     const rk = new Set(rfcv.filter((f) => f.etat === "rapproche").map((f) => f.key));
     return guceOrphelins(guceRows, fk, rk);
   }, [guceRows, fdi, rfcv]);
+  const spotOrph = useMemo(() => {
+    const rk = new Set(rfcvRows.map((r) => keyDossier(r.dossierSpot)).filter(Boolean));
+    return spotSansRfcv(spotRows, rk);
+  }, [spotRows, rfcvRows]);
   const insights = useMemo(
     () => (sources.guce || sources.fdi || sources.rfcv ? buildInsights(fdi, rfcv, orph, !!sources.spot) : []),
     [fdi, rfcv, orph, sources],
@@ -208,6 +263,47 @@ export default function Home() {
     [guceRows, moduleGuce, from, to, search],
   );
 
+  // Écarts filtrés (recherche + dates globales).
+  const ecFdiSans = useMemo(
+    () => fdi.filter((f) => f.etat === "sans-guce" && dateOk(f.row.dateCreation) && matchSearch([f.row.numeroFdi, f.row.client, f.row.facture], search)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fdi, from, to, search],
+  );
+  const ecRfcvSans = useMemo(
+    () => rfcv.filter((f) => f.etat === "sans-guce" && dateOk(f.row.dateCreation) && matchSearch([f.row.numeroRfcv, f.row.client, f.row.dossierSpot, f.row.transaction], search)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rfcv, from, to, search],
+  );
+  const ecSansNum = useMemo(
+    () => [
+      ...fdi.filter((f) => f.etat === "sans-numero").map((f) => ({ type: "FDI", ref: f.row.reference, client: f.row.client, etape: f.row.etape, date: f.row.dateCreation, unite: f.row.unite })),
+      ...rfcv.filter((f) => f.etat === "sans-numero").map((f) => ({ type: "RFCV", ref: f.row.reference, client: f.row.client, etape: f.row.etape, date: f.row.dateCreation, unite: f.row.unite })),
+    ].filter((r) => dateOk(r.date) && matchSearch([r.ref, r.client], search)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fdi, rfcv, from, to, search],
+  );
+  const ecOrph = useMemo(
+    () => orph.filter((g) => dateOk(g.dateCreation) && matchSearch([g.numero, g.importateur], search)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [orph, from, to, search],
+  );
+  const ecRfcvSansSpot = useMemo(
+    () => rfcv.filter((f) => f.spotEtat === "sans-spot" && dateOk(f.row.dateCreation) && matchSearch([f.row.numeroRfcv, f.row.client, f.row.dossierSpot], search)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rfcv, from, to, search],
+  );
+  const ecSpotSansRfcv = useMemo(
+    () => spotOrph.filter((s) => dateOk(s.date) && matchSearch([s.dossier, s.client, s.facture], search)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [spotOrph, from, to, search],
+  );
+
+  // Recherche par numéro (unifiée, 4 états).
+  const numeroRes = useMemo(
+    () => (numeroQ.trim() ? searchNumero(numeroQ, guceRows, fdi, rfcv, spotRows) : null),
+    [numeroQ, guceRows, fdi, rfcv, spotRows],
+  );
+
   // ---------- KPIs ----------
   const kpis = useMemo(() => {
     const fR = fdi.filter((f) => f.etat === "rapproche").length;
@@ -215,6 +311,7 @@ export default function Home() {
     const rR = rfcv.filter((f) => f.etat === "rapproche").length;
     const rS = rfcv.filter((f) => f.etat === "sans-guce").length;
     const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
+    const overdue = (s: string) => /overdue|late/.test(norm(s));
     return [
       { label: "GUCE (TOTAL)", value: guceRows.length },
       { label: "FDI rapprochés", value: `${fR}/${fdi.length} · ${pct(fR, fdi.length)}%` },
@@ -224,8 +321,29 @@ export default function Home() {
       { label: "GUCE orphelins (TVF/RFCV)", value: orph.length },
       { label: "Lignes SPOT", value: spotRows.length },
       { label: "RFCV liés SPOT", value: rfcv.filter((f) => f.spotEtat === "lie-spot").length },
+      { label: "RFCV sans écho SPOT", value: rfcv.filter((f) => f.spotEtat === "sans-spot").length },
+      { label: "SPOT sans RFCV", value: spotOrph.length },
+      { label: "FDI_brouillons_sans_num", value: fdi.filter((f) => f.etat === "sans-numero").length },
+      { label: "RFCV_brouillons_sans_num", value: rfcv.filter((f) => f.etat === "sans-numero").length },
+      { label: "FDI_overdue", value: fdi.filter((f) => overdue(f.row.sla)).length },
+      { label: "RFCV_overdue", value: rfcv.filter((f) => overdue(f.row.respect)).length },
     ];
-  }, [guceRows, fdi, rfcv, orph, spotRows]);
+  }, [guceRows, fdi, rfcv, orph, spotRows, spotOrph]);
+
+  const filesMeta = useMemo(
+    () =>
+      (
+        [
+          sources.guce && { label: "GUCE (vérité terrain)", fileName: sources.guce.fileName, rows: guceRows.length, ...coverage(sources.guce.map), unmapped: sources.guce.unmapped },
+          sources.fdi && { label: "OpenTrade FDI", fileName: sources.fdi.fileName, rows: fdiRows.length, ...coverage(sources.fdi.map), unmapped: sources.fdi.unmapped },
+          sources.rfcv && { label: "OpenTrade RFCV", fileName: sources.rfcv.fileName, rows: rfcvRows.length, ...coverage(sources.rfcv.map), unmapped: sources.rfcv.unmapped },
+          sources.spot && { label: "SPOT", fileName: sources.spot.fileName, rows: spotRows.length, ...coverage(sources.spot.map), unmapped: sources.spot.unmapped },
+        ].filter(Boolean) as {
+          label: string; fileName: string; rows: number; mapped: number; total: number; pct: number; unmapped: string[];
+        }[]
+      ),
+    [sources, guceRows, fdiRows, rfcvRows, spotRows],
+  );
 
   const loaded = sources.guce || sources.fdi || sources.rfcv || sources.spot;
 
@@ -260,12 +378,13 @@ export default function Home() {
         fdi: fdiF,
         rfcv: rfcvF,
         orphelins: orph,
+        spotSansRfcv: spotOrph,
         spot: spotRows,
-        spotHeader: sources.spot?.header || [],
         insights,
         kpis,
+        meta: { at: new Date().toISOString(), author, appVersion: "1.1.0", files: filesMeta, counts: kpis },
       });
-      setNotice("Export Excel téléchargé (Synthèse, FDI_croise, RFCV_croise, GUCE_orphelins, SPOT, Insights).");
+      setNotice("Export Excel téléchargé (Synthèse, Interprétation, Métadonnées, FDI/RFCV croisés, orphelins, SPOT, Insights).");
     } catch (e) {
       setNotice(`Export Excel impossible : ${(e as Error).message}`);
     } finally {
@@ -284,7 +403,9 @@ export default function Home() {
         fdiSansGuce: fdi.filter((f) => f.etat === "sans-guce"),
         rfcvSansGuce: rfcv.filter((f) => f.etat === "sans-guce"),
         orphelins: orph,
+        spotSansRfcv: spotOrph,
         insights,
+        meta: { at: new Date().toISOString(), author, appVersion: "1.1.0", files: filesMeta, counts: kpis },
       });
       const a = document.createElement("a");
       const url = URL.createObjectURL(blob);
@@ -292,7 +413,7 @@ export default function Home() {
       a.download = `Croisement_Import_${new Date().toISOString().slice(0, 10)}.docx`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 4000);
-      setNotice("Rapport Word téléchargé.");
+      setNotice("Rapport Word téléchargé (synthèse, écarts, interprétation, métadonnées).");
     } catch (e) {
       setNotice(`Rapport Word impossible : ${(e as Error).message}`);
     } finally {
@@ -311,31 +432,41 @@ export default function Home() {
     { label: "Sans N°", count: rfcv.filter((f) => f.etat === "sans-numero").length, color: "#8da1b4" },
   ];
 
+  const fdiSansCount = fdi.filter((f) => f.etat === "sans-guce").length;
+  const rfcvSansCount = rfcv.filter((f) => f.etat === "sans-guce").length;
+  const ecartsTotal = ecFdiSans.length + ecRfcvSans.length + ecSansNum.length + ecOrph.length + ecRfcvSansSpot.length + ecSpotSansRfcv.length;
+
+  // Supervision : couverture mapping + fraîcheur par source.
+  const supRows = [
+    sources.guce && { key: "GUCE", file: sources.guce.fileName, rows: guceRows.length, cov: coverage(sources.guce.map), range: minMax(guceRows.map((g) => g.dateCreation)), vital: true },
+    sources.fdi && { key: "FDI", file: sources.fdi.fileName, rows: fdiRows.length, cov: coverage(sources.fdi.map), range: minMax(fdiRows.map((f) => f.dateCreation)), vital: false },
+    sources.rfcv && { key: "RFCV", file: sources.rfcv.fileName, rows: rfcvRows.length, cov: coverage(sources.rfcv.map), range: minMax(rfcvRows.map((f) => f.dateCreation)), vital: false },
+    sources.spot && { key: "SPOT", file: sources.spot.fileName, rows: spotRows.length, cov: coverage(sources.spot.map), range: minMax(spotRows.map((f) => f.date)), vital: false },
+  ].filter(Boolean) as { key: string; file: string; rows: number; cov: { mapped: number; total: number; pct: number }; range: { min: string; max: string }; vital: boolean }[];
+
   return (
     <div className="ops-app" data-theme={theme}>
       <aside className="rail" aria-label="Navigation principale">
         <a className="rail-logo" href="#" onClick={(e) => { e.preventDefault(); setTab("pilotage"); }} aria-label="AGL — Accueil">
-          <Logo theme="dark" />
+          <Logo theme={theme} />
         </a>
         <nav className="rail-links">
           {NAV.map((n, i) => {
             const newGroup = n.group !== NAV[i - 1]?.group;
             const Icon = n.icon;
+            const badge =
+              n.id === "fdi" ? fdiSansCount
+              : n.id === "rfcv" ? rfcvSansCount
+              : n.id === "ecarts" ? ecartsTotal
+              : n.id === "insights" ? insights.length
+              : 0;
             return (
               <span key={n.id}>
                 {newGroup && <span className="rail-group">{n.group}</span>}
                 <button className={tab === n.id ? "active" : ""} onClick={() => setTab(n.id)} title={n.label}>
                   <Icon size={17} />
                   <span className="rail-label">{n.label}</span>
-                  {n.id === "fdi" && fdi.filter((f) => f.etat === "sans-guce").length > 0 && (
-                    <span className="badge-n">{fdi.filter((f) => f.etat === "sans-guce").length}</span>
-                  )}
-                  {n.id === "rfcv" && rfcv.filter((f) => f.etat === "sans-guce").length > 0 && (
-                    <span className="badge-n">{rfcv.filter((f) => f.etat === "sans-guce").length}</span>
-                  )}
-                  {n.id === "insights" && insights.length > 0 && (
-                    <span className="badge-n">{insights.length}</span>
-                  )}
+                  {badge > 0 && <span className="badge-n">{badge > 999 ? `${Math.round(badge / 100) / 10}k` : badge}</span>}
                 </button>
               </span>
             );
@@ -359,10 +490,10 @@ export default function Home() {
               <small>
                 {[sources.guce && `${guceRows.length.toLocaleString("fr-FR")} GUCE`, sources.fdi && `${fdi.length} FDI`, sources.rfcv && `${rfcv.length} RFCV`, sources.spot && `${spotRows.length.toLocaleString("fr-FR")} SPOT`]
                   .filter(Boolean)
-                  .join(" · ") || "En attente des fichiers"}
+                  .join(" · ") || "En attente du croisement"}
               </small>
             </span>
-            <button className="outline" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} title="Thème clair / obscur">
+            <button className="outline" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} title={theme === "dark" ? "Passer en thème clair" : "Passer en thème sombre"}>
               {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
             </button>
             <button className="outline" onClick={exportWord} disabled={busy || !loaded}>
@@ -386,8 +517,8 @@ export default function Home() {
 
           {!loaded && tab !== "imports" && (
             <div className="notice warn">
-              Aucun fichier chargé. Rendez-vous sur <b>Imports</b> et déposez vos 4 extractions
-              (GUCE, FDI, RFCV, SPOT) — tout est traité dans le navigateur, rien n&apos;est envoyé.
+              Aucun croisement lancé. Rendez-vous sur <b>Imports</b> : déposez tous les fichiers en une fois,
+              contrôlez la reconnaissance, puis cliquez <b>Lancer le croisement</b>.
               <button className="primary" style={{ marginLeft: 12 }} onClick={() => setTab("imports")}>
                 <Upload size={14} /> Aller aux imports
               </button>
@@ -404,25 +535,25 @@ export default function Home() {
                 </button>
                 <button className={`metric${etatFdi === "sans-guce" ? " on" : ""}`} onClick={() => goFdi("sans-guce")}>
                   <span>FDI SANS GUCE</span>
-                  <strong>{fdi.filter((f) => f.etat === "sans-guce").length}</strong>
+                  <strong>{fdiSansCount}</strong>
                   <small>Cliquez : liste à déverser / vérifier</small>
                 </button>
                 <button className={`metric${etatRfcv === "sans-guce" ? " on" : ""}`} onClick={() => goRfcv("sans-guce")}>
                   <span>RFCV SANS GUCE</span>
-                  <strong>{rfcv.filter((f) => f.etat === "sans-guce").length}</strong>
+                  <strong>{rfcvSansCount}</strong>
                   <small>Cliquez : liste à rapprocher</small>
                 </button>
-                <button className="metric" onClick={() => { resetFilters(); setTab("dossiers"); }}>
-                  <span>GUCE ORPHELINS (TVF/RFCV)</span>
-                  <strong>{orph.length.toLocaleString("fr-FR")}</strong>
-                  <small>GUCE sans pendant OpenTrade</small>
+                <button className="metric" onClick={() => { resetFilters(); setTab("ecarts"); }}>
+                  <span>TOUS LES ÉCARTS</span>
+                  <strong>{ecartsTotal.toLocaleString("fr-FR")}</strong>
+                  <small>Cliquez : absents de chaque état</small>
                 </button>
               </div>
 
               <div className="grid-2">
                 <div className="panel">
                   <h3>FDI OpenTrade × GUCE</h3>
-                  <p className="sub">Clé : N° FDI ↔ NUMERO_DEMANDE (TVF). Cliquez un onglet pour filtrer.</p>
+                  <p className="sub">Clé : N° FDI ↔ NUMERO_DEMANDE (TVF).</p>
                   <Donut parts={fdiDonut} />
                   <div className="kv">
                     <span>Taux rapprochement<b>{fdi.length ? Math.round((fdi.filter((f) => f.etat === "rapproche").length / fdi.length) * 100) : 0} %</b></span>
@@ -463,19 +594,6 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="grid-2">
-                <div className="panel">
-                  <h3>FDI par étape OpenTrade</h3>
-                  <p className="sub">Où s&apos;accumulent les dossiers ?</p>
-                  <Bars data={fdiEtapes} />
-                </div>
-                <div className="panel">
-                  <h3>RFCV par étape OpenTrade</h3>
-                  <p className="sub">Brouillons = sans N° · Terminés = à retrouver au GUCE.</p>
-                  <Bars data={rfcvEtapes} />
-                </div>
-              </div>
-
               <div className="panel">
                 <h3>Top clients — FDI sans GUCE</h3>
                 <p className="sub">Sur qui concentrer la relance de déversement ?</p>
@@ -484,7 +602,74 @@ export default function Home() {
             </>
           )}
 
-          {(tab === "fdi" || tab === "rfcv" || tab === "dossiers" || tab === "spot") && (
+          {tab === "supervision" && (
+            <>
+              <div className="steps">
+                <span className={`step ${loaded ? "done" : "on"}`}>1 · Chargement</span>
+                <span className={`step ${launch ? "done" : staged.length ? "on" : ""}`}>2 · Reconnaissance</span>
+                <span className={`step ${launch ? "done" : ""}`}>3 · Croisement lancé</span>
+                <span className="step">4 · Exploitation</span>
+              </div>
+              {!sources.guce && loaded && (
+                <div className="notice warn">
+                  <b>GUCE absent :</b> sans la vérité terrain, les états « sans GUCE » ne sont pas vérifiables.
+                  Rechargez l&apos;extraction GUCE dans Imports.
+                </div>
+              )}
+              {!sources.spot && loaded && (
+                <div className="notice">
+                  <b>SPOT non chargé :</b> le lien RFCV ↔ SPOT est suspendu. Rappel : l&apos;extraction TCD 23-30 août
+                  fournie est tronquée — ré-exportez-la complète.
+                </div>
+              )}
+              <div className="sup-grid">
+                {(["guce", "fdi", "rfcv", "spot"] as Source[]).map((s) => {
+                  const info = supRows.find((r) => r.key.toLowerCase() === s);
+                  return (
+                    <div key={s} className="panel sup-card">
+                      <h3>{s.toUpperCase()} {info?.vital && <span className="badge b-info">vérité terrain</span>}</h3>
+                      {!info ? (
+                        <p className="muted">Non chargé — <button className="outline" onClick={() => setTab("imports")}>Importer</button></p>
+                      ) : (
+                        <>
+                          <p className="sub">{info.file}</p>
+                          <div className="kv">
+                            <span>Lignes<b>{info.rows.toLocaleString("fr-FR")}</b></span>
+                            <span>Mapping<b>{info.cov.mapped}/{info.cov.total} ({info.cov.pct}%)</b></span>
+                          </div>
+                          <p className="muted">Période : {info.range.min} → {info.range.max}</p>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="panel">
+                <h3>Dernier lancement</h3>
+                {!launch ? (
+                  <p className="muted">Aucun croisement lancé pour l&apos;instant — déposez les fichiers dans Imports.</p>
+                ) : (
+                  <>
+                    <p className="sub">Lancé le {new Date(launch.at).toLocaleString("fr-FR")}</p>
+                    <ul className="muted">
+                      {launch.files.map((f, i) => <li key={i}>{f}</li>)}
+                    </ul>
+                    <div className="kv">
+                      <span>FDI rapprochés<b>{fdi.filter((f) => f.etat === "rapproche").length}/{fdi.length}</b></span>
+                      <span>RFCV rapprochés<b>{rfcv.filter((f) => f.etat === "rapproche").length}/{rfcv.length}</b></span>
+                      <span>Écarts totaux<b>{ecartsTotal.toLocaleString("fr-FR")}</b></span>
+                    </div>
+                  </>
+                )}
+                <p style={{ marginTop: 12 }}>
+                  <button className="outline" onClick={() => setTab("imports")}><Upload size={14} /> Compléter / relancer (Imports)</button>{" "}
+                  <button className="primary" onClick={() => setTab("ecarts")}>Voir les écarts</button>
+                </p>
+              </div>
+            </>
+          )}
+
+          {(tab === "fdi" || tab === "rfcv" || tab === "dossiers" || tab === "spot" || tab === "ecarts") && (
             <div className="filter-bar">
               <span className="search-box">
                 <Search size={14} />
@@ -523,7 +708,7 @@ export default function Home() {
                 <select value={etatFdi} onChange={(e) => setEtatFdi(e.target.value)} title="État croisement">
                   <option value="all">Tous états</option>
                   <option value="rapproche">Rapproché GUCE ({fdi.filter((f) => f.etat === "rapproche").length})</option>
-                  <option value="sans-guce">FDI sans GUCE ({fdi.filter((f) => f.etat === "sans-guce").length})</option>
+                  <option value="sans-guce">FDI sans GUCE ({fdiSansCount})</option>
                   <option value="sans-numero">Sans N° FDI ({fdi.filter((f) => f.etat === "sans-numero").length})</option>
                 </select>
               )}
@@ -531,7 +716,7 @@ export default function Home() {
                 <select value={etatRfcv} onChange={(e) => setEtatRfcv(e.target.value)} title="État croisement">
                   <option value="all">Tous états</option>
                   <option value="rapproche">Rapproché GUCE ({rfcv.filter((f) => f.etat === "rapproche").length})</option>
-                  <option value="sans-guce">RFCV sans GUCE ({rfcv.filter((f) => f.etat === "sans-guce").length})</option>
+                  <option value="sans-guce">RFCV sans GUCE ({rfcvSansCount})</option>
                   <option value="sans-numero">Sans N° RFCV ({rfcv.filter((f) => f.etat === "sans-numero").length})</option>
                 </select>
               )}
@@ -550,7 +735,7 @@ export default function Home() {
           {tab === "fdi" && (
             <div className="panel">
               <h3>FDI croisés — {fdiF.length} ligne(s)</h3>
-              <p className="sub">Export Excel filtré via le bouton Excel de l&apos;en-tête. Hausse de limite ci-dessous.</p>
+              <p className="sub">Export Excel filtré via le bouton Excel de l&apos;en-tête.</p>
               <div className="table-scroll">
                 <table className="grid">
                   <thead>
@@ -634,7 +819,7 @@ export default function Home() {
               <h3>SPOT — {spotRows.length.toLocaleString("fr-FR")} ligne(s)</h3>
               <p className="sub">
                 {sources.spot
-                  ? `Fichier : ${sources.spot.fileName}. Colonnes reconnues : dossier, facture, client, montant, date, TCD (voir Imports pour ajuster).`
+                  ? `Fichier : ${sources.spot.fileName}.`
                   : "Aucune extraction SPOT chargée. Allez sur Imports."}
               </p>
               {sources.spot && (
@@ -664,11 +849,182 @@ export default function Home() {
             </div>
           )}
 
+          {tab === "ecarts" && (
+            <>
+              <div className="panel">
+                <h3><span className="badge b-err">{ecFdiSans.length}</span> FDI OpenTrade absents du GUCE</h3>
+                <p className="sub">N° FDI attribués mais introuvables au GUCE : à déverser / vérifier.</p>
+                <div className="table-scroll">
+                  <table className="grid">
+                    <thead><tr><th>N° FDI</th><th>Client</th><th>Facture</th><th>Étape</th><th>Créé le</th></tr></thead>
+                    <tbody>
+                      {ecFdiSans.slice(0, limit).map((f, i) => (
+                        <tr key={i}><td><b>{f.row.numeroFdi}</b></td><td className="wrap">{f.row.client}</td><td>{f.row.facture}</td><td>{f.row.etape}</td><td>{f.row.dateCreation}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p><button className="primary" onClick={() => goFdi("sans-guce")}>Ouvrir la liste complète</button></p>
+              </div>
+              <div className="panel">
+                <h3><span className="badge b-err">{ecRfcvSans.length}</span> RFCV OpenTrade absents du GUCE</h3>
+                <p className="sub">N° RFCV avec Transaction mais sans écho GUCE (MODULE RFCV).</p>
+                <div className="table-scroll">
+                  <table className="grid">
+                    <thead><tr><th>N° RFCV</th><th>Transaction</th><th>Client</th><th>Dossier SPOT</th><th>Étape</th></tr></thead>
+                    <tbody>
+                      {ecRfcvSans.slice(0, limit).map((f, i) => (
+                        <tr key={i}><td><b>{f.row.numeroRfcv}</b></td><td>{f.row.transaction}</td><td className="wrap">{f.row.client}</td><td>{f.row.dossierSpot || "—"}</td><td>{f.row.etape}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p><button className="primary" onClick={() => goRfcv("sans-guce")}>Ouvrir la liste complète</button></p>
+              </div>
+              <div className="panel">
+                <h3><span className="badge b-warn">{ecSansNum.length}</span> Dossiers sans N° (brouillons / collecte)</h3>
+                <p className="sub">Encours normal de saisie : sans N° FDI/RFCV attribué.</p>
+                <div className="table-scroll">
+                  <table className="grid">
+                    <thead><tr><th>Type</th><th>Référence</th><th>Client</th><th>Étape</th><th>Créé le</th><th>Unité</th></tr></thead>
+                    <tbody>
+                      {ecSansNum.slice(0, limit).map((r, i) => (
+                        <tr key={i}><td>{r.type}</td><td>{r.ref}</td><td className="wrap">{r.client}</td><td>{r.etape}</td><td>{r.date}</td><td>{r.unite}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="panel">
+                <h3><span className="badge b-info">{ecOrph.length.toLocaleString("fr-FR")}</span> GUCE orphelins (TVF/RFCV sans OpenTrade)</h3>
+                <p className="sub">Créés hors OpenTrade ou via un autre canal.</p>
+                <Bars data={countBy(ecOrph, (o) => o.importateur)} top={10} />
+              </div>
+              <div className="panel">
+                <h3><span className="badge b-warn">{ecRfcvSansSpot.length}</span> RFCV sans écho SPOT</h3>
+                <p className="sub">N° Dossier SPOT sans correspondance dans l&apos;extraction SPOT.</p>
+                <div className="table-scroll">
+                  <table className="grid">
+                    <thead><tr><th>N° RFCV</th><th>Client</th><th>Dossier SPOT</th><th>Créé le</th></tr></thead>
+                    <tbody>
+                      {ecRfcvSansSpot.slice(0, limit).map((f, i) => (
+                        <tr key={i}><td><b>{f.row.numeroRfcv || "—"}</b></td><td className="wrap">{f.row.client}</td><td>{f.row.dossierSpot}</td><td>{f.row.dateCreation}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="panel">
+                <h3><span className="badge b-info">{ecSpotSansRfcv.length.toLocaleString("fr-FR")}</span> SPOT sans RFCV (sens inverse)</h3>
+                <p className="sub">Dossiers SPOT qu&apos;aucun RFCV ne réclame : hors périmètre ou RFCV à créer.</p>
+                <div className="table-scroll">
+                  <table className="grid">
+                    <thead><tr><th>Dossier</th><th>Client</th><th>Facture</th><th>Date</th></tr></thead>
+                    <tbody>
+                      {ecSpotSansRfcv.slice(0, limit).map((s, i) => (
+                        <tr key={i}><td><b>{s.dossier}</b></td><td className="wrap">{s.client}</td><td>{s.facture}</td><td>{s.date}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {tab === "recherche" && (
+            <div className="panel">
+              <h3>Recherche par numéro — tous les états en une fois</h3>
+              <p className="sub">Saisissez un N° FDI (260…), N° RFCV (RCS…), N° Transaction (166…), dossier SPOT, facture ou référence : la plateforme retrouve le dossier dans GUCE, OpenTrade et SPOT.</p>
+              <span className="search-box" style={{ maxWidth: 520 }}>
+                <Search size={16} />
+                <input
+                  placeholder="Ex : 260156418 · RCS26127059 · 1665482 · 26200924 · n° facture…"
+                  value={numeroQ}
+                  onChange={(e) => setNumeroQ(e.target.value)}
+                  style={{ fontSize: 14 }}
+                />
+                {numeroQ && (
+                  <button className="icon-btn" onClick={() => setNumeroQ("")} aria-label="Effacer">
+                    <X size={14} />
+                  </button>
+                )}
+              </span>
+              {!numeroRes && <p className="muted" style={{ marginTop: 14 }}>En attente d&apos;un numéro…</p>}
+              {numeroRes && (
+                <div style={{ marginTop: 14 }}>
+                  {numeroRes.guce.length + numeroRes.fdi.length + numeroRes.rfcv.length + numeroRes.spot.length === 0 && (
+                    <p className="muted">Aucun dossier trouvé pour « {numeroQ} » dans les 4 états.</p>
+                  )}
+                  {numeroRes.guce.length > 0 && (
+                    <>
+                      <h3><span className="badge b-ok">GUCE · {numeroRes.guce.length}</span> vérité terrain</h3>
+                      <div className="table-scroll">
+                        <table className="grid">
+                          <thead><tr><th>NUMERO</th><th>MODULE</th><th>IMPORTATEUR</th><th>STATUT</th><th>FOB</th><th>Créé le</th></tr></thead>
+                          <tbody>
+                            {numeroRes.guce.map((g, i) => (
+                              <tr key={i}><td><b>{g.numero}</b></td><td>{g.module}</td><td className="wrap">{g.importateur}</td><td>{g.statut}</td><td>{g.valeurFob}</td><td>{g.dateCreation}</td></tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                  {numeroRes.fdi.length > 0 && (
+                    <>
+                      <h3 style={{ marginTop: 16 }}><span className="badge b-info">OpenTrade FDI · {numeroRes.fdi.length}</span></h3>
+                      <div className="table-scroll">
+                        <table className="grid">
+                          <thead><tr><th>N° FDI</th><th>Client</th><th>Facture</th><th>Étape</th><th>État GUCE</th></tr></thead>
+                          <tbody>
+                            {numeroRes.fdi.map((f, i) => (
+                              <tr key={i}><td><b>{f.row.numeroFdi || "—"}</b></td><td className="wrap">{f.row.client}</td><td>{f.row.facture}</td><td>{f.row.etape}</td><td>{ETAT_FDI[f.etat]}{f.guce ? ` (${f.guce.statut})` : ""}</td></tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                  {numeroRes.rfcv.length > 0 && (
+                    <>
+                      <h3 style={{ marginTop: 16 }}><span className="badge b-info">OpenTrade RFCV · {numeroRes.rfcv.length}</span></h3>
+                      <div className="table-scroll">
+                        <table className="grid">
+                          <thead><tr><th>N° RFCV</th><th>Transaction</th><th>Dossier SPOT</th><th>Client</th><th>État GUCE</th></tr></thead>
+                          <tbody>
+                            {numeroRes.rfcv.map((f, i) => (
+                              <tr key={i}><td><b>{f.row.numeroRfcv || "—"}</b></td><td>{f.row.transaction}</td><td>{f.row.dossierSpot || "—"}</td><td className="wrap">{f.row.client}</td><td>{ETAT_RFCV[f.etat]}{f.guce ? ` (${f.guce.statut})` : ""}</td></tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                  {numeroRes.spot.length > 0 && (
+                    <>
+                      <h3 style={{ marginTop: 16 }}><span className="badge b-grey">SPOT · {numeroRes.spot.length}</span></h3>
+                      <div className="table-scroll">
+                        <table className="grid">
+                          <thead><tr><th>Dossier</th><th>Client</th><th>Facture</th><th>Montant</th><th>Date</th></tr></thead>
+                          <tbody>
+                            {numeroRes.spot.map((s, i) => (
+                              <tr key={i}><td><b>{s.dossier}</b></td><td className="wrap">{s.client}</td><td>{s.facture}</td><td>{s.montant}</td><td>{s.date}</td></tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {tab === "dossiers" && (
             <>
               <div className="panel">
                 <h3>GUCE — {guceF.length.toLocaleString("fr-FR")} dossier(s)</h3>
-                <p className="sub">Source véridique. Filtrez par module (TVF ≈ FDI, RFCV ≈ RFCV) et par date de création.</p>
+                <p className="sub">Source véridique. TVF ≈ FDI, RFCV ≈ RFCV.</p>
                 <div className="table-scroll">
                   <table className="grid">
                     <thead>
@@ -701,8 +1057,9 @@ export default function Home() {
               </div>
               <div className="panel">
                 <h3>GUCE orphelins (TVF/RFCV sans OpenTrade) — {orph.length.toLocaleString("fr-FR")}</h3>
-                <p className="sub">Dossiers GUCE créés hors OpenTrade ou via un autre canal : à qualifier.</p>
+                <p className="sub">Dossiers GUCE créés hors OpenTrade ou via un autre canal : détail complet dans Écarts.</p>
                 <Bars data={countBy(orph, (o) => o.importateur)} top={10} />
+                <p><button className="outline" onClick={() => { resetFilters(); setTab("ecarts"); }}>Ouvrir les écarts</button></p>
               </div>
             </>
           )}
@@ -723,8 +1080,8 @@ export default function Home() {
                       else if (ins.title.includes("RFCV OpenTrade absents")) goRfcv("sans-guce");
                       else if (ins.title.includes("RFCV sans N°")) { resetFilters(); setEtatRfcv("sans-numero"); setTab("rfcv"); }
                       else if (ins.title.includes("SPOT")) setTab("imports");
-                      else if (ins.title.includes("TVF") || ins.title.includes("RFCV GUCE")) { resetFilters(); setTab("dossiers"); }
-                      else if (ins.title.includes("dépassement")) setTab("insights");
+                      else if (ins.title.includes("TVF") || ins.title.includes("RFCV GUCE")) { resetFilters(); setTab("ecarts"); }
+                      else if (ins.title.includes("dépassement")) setTab("ecarts");
                     }}
                   >
                     <span className={`badge lvl ${ins.level === "danger" ? "b-err" : ins.level === "warn" ? "b-warn" : ins.level === "ok" ? "b-ok" : "b-info"}`}>
@@ -751,41 +1108,37 @@ export default function Home() {
           {tab === "imports" && (
             <>
               <div className="notice">
-                <ShieldCheck size={14} /> <b>Chargement manuel, 100 % local.</b> Les fichiers sont lus
-                dans votre navigateur (bulk accepté, y compris GUCE 80 000+ lignes). Rien n&apos;est envoyé
-                sur Internet — le déploiement Vercel n&apos;héberge que l&apos;interface vide.
+                <ShieldCheck size={14} /> <b>Chargement groupé, 100 % local.</b> Déposez tous les fichiers en une fois :
+                la plateforme <b>reconnaît</b> chaque source (GUCE / FDI / RFCV / SPOT), vous validez le mapping,
+                puis vous cliquez <b>Lancer le croisement</b>. Rien n&apos;est calculé ni envoyé avant ce clic.
               </div>
-              {!sources.spot && (
+              {!sources.spot && staged.every((s) => effectiveSource(s) !== "spot") && (
                 <div className="notice warn">
-                  <b>SPOT :</b> l&apos;extraction « TCD 23-30 août » fournie est <b>tronquée/illisible</b>
-                  (archive ZIP incomplète). Ré-exportez l&apos;extraction SPOT/OpenTrade complète puis
-                  déposez-la ci-dessous — la plateforme choisira automatiquement l&apos;onglet le plus fourni.
+                  <b>SPOT :</b> l&apos;extraction « TCD 23-30 août » fournie est <b>tronquée/illisible</b>.
+                  Ré-exportez l&apos;extraction SPOT/OpenTrade complète puis déposez-la ici.
                 </div>
               )}
-              <div className="src-grid">
-                <SourceImporter name="guce" value={sources.guce} mapFn={mapGuce}
-                  onLoad={(s) => { setSrc("guce", s); setNotice(`GUCE chargé : ${s.rows.length.toLocaleString("fr-FR")} lignes.`); }}
-                  onClear={() => setSrc("guce", null)}
-                  onRemap={(map) => sources.guce && setSrc("guce", { ...sources.guce, map })} />
-                <SourceImporter name="fdi" value={sources.fdi} mapFn={mapFdi}
-                  onLoad={(s) => { setSrc("fdi", s); setNotice(`FDI chargés : ${s.rows.length} lignes.`); }}
-                  onClear={() => setSrc("fdi", null)}
-                  onRemap={(map) => sources.fdi && setSrc("fdi", { ...sources.fdi, map })} />
-                <SourceImporter name="rfcv" value={sources.rfcv} mapFn={mapRfcv}
-                  onLoad={(s) => { setSrc("rfcv", s); setNotice(`RFCV chargés : ${s.rows.length} lignes.`); }}
-                  onClear={() => setSrc("rfcv", null)}
-                  onRemap={(map) => sources.rfcv && setSrc("rfcv", { ...sources.rfcv, map })} />
-                <SourceImporter name="spot" value={sources.spot} mapFn={mapSpot}
-                  onLoad={(s) => { setSrc("spot", s); setNotice(`SPOT chargé : ${s.rows.length.toLocaleString("fr-FR")} lignes.`); }}
-                  onClear={() => setSrc("spot", null)}
-                  onRemap={(map) => sources.spot && setSrc("spot", { ...sources.spot, map })} />
+              <div className="panel">
+                <h3>Étape 1+2 · Dépôt groupé & reconnaissance</h3>
+                <p className="sub">Bulk accepté, y compris GUCE 80 000+ lignes. La zone se vide après chaque lancement.</p>
+                <BulkImporter staged={staged} setStaged={setStaged} onLaunch={handleLaunch} />
               </div>
-              <div className="panel" style={{ marginTop: 14 }}>
+              {loaded && (
+                <div className="panel">
+                  <h3>Sources actives (dernier croisement)</h3>
+                  <ul className="muted">
+                    {filesMeta.map((f, i) => (
+                      <li key={i}>{f.label} : {f.fileName} — {f.rows.toLocaleString("fr-FR")} lignes — mapping {f.mapped}/{f.total}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="panel">
                 <h3>Exports & rapports</h3>
-                <p className="sub">Excel multi-onglets (Synthèse, FDI_croise, RFCV_croise, GUCE_orphelins, SPOT, Insights) + rapport Word.</p>
+                <p className="sub">Excel : Synthèse + <b>Interprétation</b> + <b>Métadonnées</b> + onglets croisés. Word : synthèse, écarts, interprétation détaillée, métadonnées.</p>
                 <p>
-                  <label className="muted">Signataire du rapport (optionnel)</label>
-                  <input placeholder="Nom de l'opérateur…" value={author} onChange={(e) => setAuthor(e.target.value)} style={{ maxWidth: 320 }} />
+                  <label className="muted">Signataire du rapport (optionnel, mémorisé)</label>
+                  <input placeholder="Nom de l'opérateur…" value={author} onChange={(e) => setAuthorPersist(e.target.value)} style={{ maxWidth: 320 }} />
                 </p>
                 <p>
                   <button className="primary" onClick={exportExcel} disabled={busy || !loaded}>
@@ -808,3 +1161,5 @@ export default function Home() {
     </div>
   );
 }
+
+type Source = "guce" | "fdi" | "rfcv" | "spot";

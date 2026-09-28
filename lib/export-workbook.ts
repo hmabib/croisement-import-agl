@@ -1,14 +1,16 @@
 import * as XLSX from "xlsx";
 import type { FdiCross, GuceRow, Insight, RfcvCross, SpotRow } from "./cross";
+import { buildInterpretation, buildMetadata, type ReportMeta } from "./report-content";
 
 export type ExportInput = {
   fdi: FdiCross[];
   rfcv: RfcvCross[];
   orphelins: GuceRow[];
+  spotSansRfcv: SpotRow[];
   spot: SpotRow[];
-  spotHeader: string[];
   insights: Insight[];
   kpis: { label: string; value: number | string }[];
+  meta: ReportMeta;
 };
 
 export function exportWorkbook(input: ExportInput) {
@@ -21,6 +23,23 @@ export function exportWorkbook(input: ExportInput) {
       ...input.kpis.map((k) => [k.label, k.value]),
     ]),
     "Synthese",
+  );
+
+  // Page d'interprétation : guide de lecture explicite de chaque indicateur.
+  XLSX.utils.book_append_sheet(
+    book,
+    XLSX.utils.aoa_to_sheet([
+      ["Indicateur", "Valeur constatée", "Lecture (comment l'interpréter)", "Action recommandée"],
+      ...buildInterpretation(input.kpis).map((b) => [b.indicateur, b.valeur, b.lecture, b.action]),
+    ]),
+    "Interpretation",
+  );
+
+  // Page de métadonnées : traçabilité complète du croisement.
+  XLSX.utils.book_append_sheet(
+    book,
+    XLSX.utils.aoa_to_sheet([["Champ", "Valeur"], ...buildMetadata(input.meta)]),
+    "Metadonnees",
   );
 
   XLSX.utils.book_append_sheet(
@@ -123,6 +142,20 @@ export function exportWorkbook(input: ExportInput) {
       ),
       "SPOT",
     );
+    XLSX.utils.book_append_sheet(
+      book,
+      XLSX.utils.json_to_sheet(
+        input.spotSansRfcv.map((s) => ({
+          Dossier: s.dossier,
+          Facture: s.facture,
+          Client: s.client,
+          Montant: s.montant,
+          Date: s.date,
+          TCD: s.tcd,
+        })),
+      ),
+      "SPOT_sans_RFCV",
+    );
   }
 
   XLSX.utils.book_append_sheet(
@@ -137,6 +170,12 @@ export function exportWorkbook(input: ExportInput) {
     ),
     "Insights",
   );
+
+  // Largeurs lisibles pour les pages de lecture.
+  for (const name of ["Synthese", "Interpretation", "Metadonnees"]) {
+    const ws = book.Sheets[name];
+    if (ws) ws["!cols"] = [{ wch: 34 }, { wch: 26 }, { wch: 110 }, { wch: 90 }].slice(0, 4);
+  }
 
   XLSX.writeFile(book, `Croisement_Import_GUCE_SPOT_OpenTrade_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }

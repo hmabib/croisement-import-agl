@@ -182,4 +182,59 @@ details summary { cursor: pointer; font-size: 12px; color: var(--accent); margin
   .page { padding: 16px 14px; }
   .metrics { grid-template-columns: 1fr 1fr; margin-bottom: 14px; }
   .bar-row { grid-template-columns: 120px 1fr 44px; }
+  .launch-bar { flex-direction: column; align-items: stretch; }
 }
+
+/* ================= Chargeur groupé + supervision ================= */
+.stage-list { display: grid; gap: 12px; margin-top: 14px; }
+.stage-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+.stage-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.stage-head b { display: block; font-size: 13px; overflow-wrap: anywhere; }
+.stage-head small { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; }
+.stage-recog { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 12px 0 4px; }
+.stage-recog label { font-size: 11px; color: var(--muted); min-width: 220px; flex: 1; max-width: 340px; }
+.stage-recog select { margin-top: 4px; }
+.launch-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-top: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel);
+}
+.primary.big { padding: 12px 20px; font-size: 14px; }
+.steps { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.step { font-size: 12px; font-weight: 700; padding: 8px 14px; border-radius: 20px; background: #1c3345; color: #abc4d5; }
+.step.on { background: #265b56; color: #a8e6d2; }
+.step.done { background: #1c4a3a; color: #8ce2ca; }
+.sup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+.sup-card { margin-bottom: 0; }
+@media (max-width: 1100px) { .sup-grid { grid-template-columns: 1fr; } }
+
+/* ================= Version claire : revue complète ================= */
+.ops-app[data-theme="light"] .panel { background: #fff; }
+.ops-app[data-theme="light"] .dropzone { background: #f7fafd; border-color: #14467c; color: #0a2240; }
+.ops-app[data-theme="light"] .dropzone:hover { background: #eaf1f9; }
+.ops-app[data-theme="light"] .notice { background: #eaf4ff; border-color: #14467c; color: #0a2240; }
+.ops-app[data-theme="light"] .notice.warn { background: #fff4d6; border-color: #b79d5c; color: #6b4e00; }
+.ops-app[data-theme="light"] .error-text { color: #b30022; }
+.ops-app[data-theme="light"] .outline { border-color: #14467c; color: #0a2240; background: #fff; }
+.ops-app[data-theme="light"] .outline:hover { background: #eaf1f9; }
+.ops-app[data-theme="light"] .outline:disabled { color: #8da1b4; border-color: #dde5ef; }
+.ops-app[data-theme="light"] .primary:disabled { background: #b9c6d8; }
+.ops-app[data-theme="light"] .b-ok { background: #d9ecda; color: #146314; }
+.ops-app[data-theme="light"] .b-warn { background: #fff1cf; color: #8a5f00; }
+.ops-app[data-theme="light"] .b-err { background: #fde4e8; color: #a3121f; }
+.ops-app[data-theme="light"] .b-info { background: #e2ecf7; color: #0a2240; }
+.ops-app[data-theme="light"] .b-grey { background: #eef1f6; color: #33475f; }
+.ops-app[data-theme="light"] details summary { color: #14467c; }
+.ops-app[data-theme="light"] .insight { background: #fff; }
+.ops-app[data-theme="light"] .insight:hover { border-color: #14467c; }
+.ops-app[data-theme="light"] .stage-card, .ops-app[data-theme="light"] .launch-bar { background: #fff; }
+.ops-app[data-theme="light"] .step { background: #e7edf4; color: #5d7186; }
+.ops-app[data-theme="light"] .step.on { background: #14467c; color: #fff; }
+.ops-app[data-theme="light"] .step.done { background: #d9ecda; color: #146314; }
+.ops-app[data-theme="light"] .rail-links .badge-n { background: #e4002b; color: #fff; }
+.ops-app[data-theme="light"] table.grid td { color: #16283d; }
+.ops-app[data-theme="light"] input[type="date"] { color-scheme: light; }
+.ops-app[data-theme="light"] .metric.on { outline-color: #e4002b; }
+.ops-app[data-theme="light"] .local-status .live-dot { background: #2e9e7b; }
+.ops-app[data-theme="light"] .toast { background: #d9ecda; color: #146314; border-color: #146314; }
+/* ================= Version sombre : badges lisibles ================= */
+.ops-app[data-theme="dark"] .rail-links .badge-n { background: #e4002b; color: #fff; }

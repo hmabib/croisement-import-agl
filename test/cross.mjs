@@ -24,6 +24,12 @@ import {
   mapFdi,
   mapGuce,
   mapRfcv,
+  mapSpot,
+  matchSearch,
+  norm,
+  recognizeSource,
+  searchNumero,
+  spotSansRfcv,
   toISODate,
 } from "../lib/cross.ts";
 
@@ -104,6 +110,54 @@ test("insights non vides", () => {
   assert.ok(ins.some((i) => i.title.includes("FDI OpenTrade absents")));
   assert.ok(ins.some((i) => i.title.includes("RFCV OpenTrade absents")));
   assert.ok(orph.length > 10000, `orphelins TVF/RFCV attendus en masse, vu ${orph.length}`);
+});
+
+test("reconnaissance auto des 3 sources connues", () => {
+  const g = recognizeSource(gHeader);
+  const f = recognizeSource(fHeader);
+  const r = recognizeSource(rHeader);
+  console.log("   GUCE ->", g.best, g.scores.map((s) => `${s.source}:${Math.round(s.score * 100)}%`).join(" "));
+  console.log("   FDI  ->", f.best, f.scores.map((s) => `${s.source}:${Math.round(s.score * 100)}%`).join(" "));
+  console.log("   RFCV ->", r.best, r.scores.map((s) => `${s.source}:${Math.round(s.score * 100)}%`).join(" "));
+  assert.equal(g.best, "guce");
+  assert.equal(f.best, "fdi");
+  assert.equal(r.best, "rfcv");
+});
+
+test("recherche par numero unifiee", () => {
+  const idx = new Map(guce.map((g) => [keyNumero(g.numero), g]));
+  const fc = crossFdi(fdis, idx);
+  const rc = crossRfcv(rfcvs, idx, null);
+  // N° FDI réel : présent OpenTrade + GUCE
+  const knownFdi = fdis.find((f) => keyNumero(f.numeroFdi) && idx.has(keyNumero(f.numeroFdi)));
+  const hit = searchNumero(knownFdi.numeroFdi, guce, fc, rc, []);
+  assert.ok(hit.fdi.length >= 1, "FDI retrouvé");
+  assert.ok(hit.guce.length >= 1, "GUCE retrouvé");
+  // N° RFCV réel
+  const knownRfcv = rfcvs.find((r) => keyNumero(r.numeroRfcv) && idx.has(keyNumero(r.numeroRfcv)));
+  const hit2 = searchNumero(knownRfcv.numeroRfcv, guce, fc, rc, []);
+  assert.ok(hit2.rfcv.length >= 1 && hit2.guce.length >= 1, "RFCV + GUCE retrouvés");
+  // Transaction interne -> retrouvée côté RFCV uniquement
+  const withTrans = rfcvs.find((r) => r.transaction && r.transaction.length >= 5);
+  const hit3 = searchNumero(withTrans.transaction, guce, fc, rc, []);
+  assert.ok(hit3.rfcv.length >= 1, "Transaction retrouvée");
+  // Inconnu -> vide
+  const hit4 = searchNumero("ZZZ999XXX000", guce, fc, rc, []);
+  assert.ok(hit4.guce.length + hit4.fdi.length + hit4.rfcv.length + hit4.spot.length === 0, "vide attendu");
+});
+
+test("SPOT sans RFCV = miroir du lien dossier", () => {
+  const idx = new Map(guce.map((g) => [keyNumero(g.numero), g]));
+  const rc = crossRfcv(rfcvs, idx, null);
+  const keys = new Set(rc.filter((c) => c.spotKey).map((c) => c.spotKey));
+  const fakeSpot = [
+    { raw: {}, dossier: "26200924", facture: "X", client: "C", montant: "", date: "", tcd: "" },
+    { raw: {}, dossier: "99999999", facture: "Y", client: "C", montant: "", date: "", tcd: "" },
+  ];
+  void keys;
+  const orph = spotSansRfcv(fakeSpot, new Set(["26200924"]));
+  assert.equal(orph.length, 1);
+  assert.equal(orph[0].dossier, "99999999");
 });
 
 void readFileSync;

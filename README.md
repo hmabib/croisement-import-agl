@@ -10,18 +10,23 @@ Plateforme **100 % locale** de croisement des déclarations import.
 ## Fonctionnement (données 100 % locales)
 
 1. Ouvrez l'app, allez sur **Imports**.
-2. Glissez-déposez les 4 extractions (bulk accepté) :
+2. Glissez-déposez les 4 extractions **en une fois** (bulk accepté) :
    - `DOSSIERS_GUCE_AGL_*.xlsx` (80 000+ lignes OK, tout reste dans le navigateur)
    - `fdis-*.xlsx` (OpenTrade FDI)
    - `rfcvs-*.xlsx` (OpenTrade RFCV)
    - `EXTRACTION-SPOT-*.xlsx` (SPOT / OpenTrade)
-3. La plateforme **classe, mappe et reconnaît** les colonnes automatiquement
-   (panneau de correspondance modifiable).
+3. La plateforme **reconnaît** chaque source automatiquement (score de confiance),
+   vous validez le mapping, puis cliquez **« Lancer le croisement »** :
+   rien n'est calculé avant ce clic (cf. vue **Supervision**).
 4. Croisements automatiques :
    - `FDI.N° FDI` ↔ `GUCE.NUMERO_DEMANDE` (MODULE TVF)
    - `RFCV.N° RFCV` ↔ `GUCE.NUMERO_DEMANDE` (MODULE RFCV)
-   - `RFCV.N° Dossier SPOT` ↔ `SPOT dossier`
-5. Statistiques **cliquables**, filtres date, recherche, exports **Excel** + rapport **Word**.
+   - `RFCV.N° Dossier SPOT` ↔ `SPOT dossier` (et sens inverse : SPOT sans RFCV)
+5. Vues : Pilotage (stats **cliquables**), Supervision, **Écarts / Absents**
+   (FDI/RFCV sans GUCE, brouillons sans N°, GUCE orphelins, sans écho SPOT…),
+   **Recherche par N°** unifiée (FDI, RCS, Transaction, dossier SPOT, facture),
+   filtres date, exports **Excel** + rapport **Word** avec pages
+   **Interprétation** (guide de lecture) et **Métadonnées** (traçabilité).
 
 > 🔒 Confidentialité : aucun fichier n'est envoyé sur Internet. Tout est parsé
 > et croisé dans le navigateur (SheetJS côté client). Le déploiement Vercel
