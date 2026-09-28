@@ -1,0 +1,19 @@
+:root {
+  --agl-navy: #0a2240;
+  --agl-blue: #14467c;
+  --agl-red: #e4002b;
+  --agl-bg: #f2f5f9;
+  --agl-card: #ffffff;
+  --agl-line: #dde5ef;
+  --agl-txt: #16283d;
+  --agl-mut: #5d7186;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  background: var(--agl-bg);
+  color: var(--agl-txt);
+}
