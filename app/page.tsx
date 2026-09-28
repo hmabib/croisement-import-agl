@@ -21,6 +21,8 @@ import {
   LogOut,
   Eye,
   EyeOff,
+  PanelLeftClose,
+  PanelLeftOpen,
   X,
 } from "lucide-react";
 import Logo from "@/components/Logo";
@@ -124,6 +126,8 @@ export default function Home() {
   const [pwd, setPwd] = useState("");
   const [pwdErr, setPwdErr] = useState("");
   const [showPwd, setShowPwd] = useState(false);
+  // Menu replié (bureau uniquement), mémorisé.
+  const [railMini, setRailMini] = useState(false);
 
   // Thème persisté (le sélecteur dark/light restait purement visuel).
   useEffect(() => {
@@ -133,8 +137,14 @@ export default function Home() {
       const a = localStorage.getItem("croisement-author") || "";
       if (a) setAuthor(a);
       if (sessionStorage.getItem("croisement-auth") === "1") setAuthed(true);
+      if (localStorage.getItem("croisement-rail") === "mini") setRailMini(true);
     } catch {}
   }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem("croisement-rail", railMini ? "mini" : "full");
+    } catch {}
+  }, [railMini]);
   useEffect(() => {
     try {
       localStorage.setItem("croisement-theme", theme);
@@ -415,7 +425,7 @@ export default function Home() {
         spot: spotRows,
         insights,
         kpis,
-        meta: { at: new Date().toISOString(), author, appVersion: "1.1.0", files: filesMeta, counts: kpis },
+        meta: { at: new Date().toISOString(), author, appVersion: "1.2.0", files: filesMeta, counts: kpis },
       });
       setNotice("Export Excel téléchargé (Synthèse, Interprétation, Métadonnées, FDI/RFCV croisés, orphelins, SPOT, Insights).");
     } catch (e) {
@@ -438,7 +448,7 @@ export default function Home() {
         orphelins: orph,
         spotSansRfcv: spotOrph,
         insights,
-        meta: { at: new Date().toISOString(), author, appVersion: "1.1.0", files: filesMeta, counts: kpis },
+        meta: { at: new Date().toISOString(), author, appVersion: "1.2.0", files: filesMeta, counts: kpis },
       });
       const a = document.createElement("a");
       const url = URL.createObjectURL(blob);
@@ -513,11 +523,22 @@ export default function Home() {
   }
 
   return (
-    <div className="ops-app" data-theme={theme}>
+    <div className={`ops-app${railMini ? " rail-mini" : ""}`} data-theme={theme}>
       <aside className="rail" aria-label="Navigation principale">
-        <a className="rail-logo" href="#" onClick={(e) => { e.preventDefault(); setTab("pilotage"); }} aria-label="AGL — Accueil">
-          <Logo theme={theme} />
-        </a>
+        <div className="rail-head">
+          <a className="rail-logo" href="#" onClick={(e) => { e.preventDefault(); setTab("pilotage"); }} aria-label="AGL — Accueil">
+            <Logo theme={theme} />
+          </a>
+          <button
+            className="rail-toggle"
+            onClick={() => setRailMini(!railMini)}
+            title={railMini ? "Déplier le menu" : "Replier le menu"}
+            aria-label={railMini ? "Déplier le menu" : "Replier le menu"}
+            aria-expanded={!railMini}
+          >
+            {railMini ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+          </button>
+        </div>
         <nav className="rail-links">
           {NAV.map((n, i) => {
             const newGroup = n.group !== NAV[i - 1]?.group;
@@ -531,7 +552,12 @@ export default function Home() {
             return (
               <span key={n.id}>
                 {newGroup && <span className="rail-group">{n.group}</span>}
-                <button className={tab === n.id ? "active" : ""} onClick={() => setTab(n.id)} title={n.label}>
+                <button
+                  className={tab === n.id ? "active" : ""}
+                  onClick={() => setTab(n.id)}
+                  title={n.label}
+                  aria-current={tab === n.id ? "page" : undefined}
+                >
                   <Icon size={17} />
                   <span className="rail-label">{n.label}</span>
                   {badge > 0 && <span className="badge-n">{badge > 999 ? `${Math.round(badge / 100) / 10}k` : badge}</span>}
@@ -541,8 +567,7 @@ export default function Home() {
           })}
         </nav>
         <div className="rail-foot">
-          <ShieldCheck size={14} /> 100 % local
-          <br />aucun envoi réseau
+          <ShieldCheck size={14} /> <span className="foot-txt">100 % local<br />aucun envoi réseau<br />v1.2.0</span>
         </div>
       </aside>
 
