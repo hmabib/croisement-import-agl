@@ -1,0 +1,11 @@
+{
+  "name": "FA-03 Relances overdue hebdo",
+  "solution": "CroisementImportAGL",
+  "trigger": { "type": "Recurrence", "schedule": "0 8 * * MON" },
+  "actions": [
+    { "dataverse": "ListRows agl_dossierfdi + agl_dossierrfcv", "filter": "agl_sla eq 'overdue' and agl_etape ne 'Terminé'" },
+    { "compose": "Grouper par Agent/Unité + tableau HTML" },
+    { "notify": "Email + Teams aux agents, copie superviseurs" },
+    { "dataverse": "Update agl_ecart priorités" }
+  ]
+}

@@ -1,0 +1,24 @@
+// Mesures Power BI — Croisement Import AGL (collez dans Modélisation > Nouvelle mesure)
+Taux rapprochement FDI % =
+DIVIDE(
+  CALCULATE(COUNTROWS(agl_dossierfdi), agl_dossierfdi[agl_statutrapprochement] = "Rapproche_GUCE"),
+  CALCULATE(COUNTROWS(agl_dossierfdi), NOT ISBLANK(agl_dossierfdi[agl_nofdi_norm]))
+)
+Taux rapprochement RFCV % =
+DIVIDE(
+  CALCULATE(COUNTROWS(agl_dossierrfcv), NOT ISBLANK(agl_dossierrfcv[agl_norfcv_norm]), NOT ISBLANK(agl_dossierrfcv[agl_dossierguce])),
+  CALCULATE(COUNTROWS(agl_dossierrfcv), NOT ISBLANK(agl_dossierrfcv[agl_norfcv_norm]))
+)
+FDI sans GUCE = CALCULATE(COUNTROWS(agl_dossierfdi), agl_dossierfdi[agl_statutrapprochement] = "Sans_GUCE")
+RFCV sans GUCE = CALCULATE(COUNTROWS(agl_dossierrfcv), ISBLANK(agl_dossierrfcv[agl_dossierguce]), NOT ISBLANK(agl_dossierrfcv[agl_norfcv_norm]))
+Brouillons sans N° = CALCULATE(COUNTROWS(agl_dossierfdi), ISBLANK(agl_dossierfdi[agl_nofdi_norm])) + CALCULATE(COUNTROWS(agl_dossierrfcv), ISBLANK(agl_dossierrfcv[agl_norfcv_norm]))
+Écarts ouverts = CALCULATE(COUNTROWS(agl_ecart), agl_ecart[agl_statut] = "Ouvert")
+Overdue = CALCULATE(COUNTROWS(agl_dossierfdi), agl_dossierfdi[agl_sla] = "overdue") + CALCULATE(COUNTROWS(agl_dossierrfcv), agl_dossierrfcv[agl_respectecheance] = "overdue")
+// Seuils : >= 95 % sain (vert) · 80-95 % à surveiller (orange) · < 80 % alerte (rouge) — format conditionnel sur les cartes.
+// v1.1 — C1/C2/C3
+GUCE sans echo systeme = CALCULATE(COUNTROWS(agl_dossierguce), agl_dossierguce[agl_presence_systeme] = "Absent")
+GUCE orphelins a verifier = CALCULATE(COUNTROWS(agl_dossierguce), agl_dossierguce[agl_etat_controle1] = "ORPHELIN_A_VERIFIER")
+Factures AGL (FDI+RFCV) = CALCULATE(COUNTROWS(agl_dossierfdi), agl_dossierfdi[agl_facture_agl] = "Oui") + CALCULATE(COUNTROWS(agl_dossierrfcv), agl_dossierrfcv[agl_facture_agl] = "Oui")
+Ecarts C1 = CALCULATE(COUNTROWS(agl_ecart), agl_ecart[agl_categorie] = "GUCE_SANS_ECHO_SYSTEME", agl_ecart[agl_statut] = "Ouvert")
+Ecarts C2 = CALCULATE(COUNTROWS(agl_ecart), agl_ecart[agl_categorie] = "FACTURE_AGL_A_VERIFIER", agl_ecart[agl_statut] = "Ouvert")
+// Periodes : axe agl_periode / agl_periode_guce + slicer Du/Au. Ex : Taux FDI par periode = CALCULATE([Taux rapprochement FDI %], ALLEXCEPT(agl_dossierfdi, agl_dossierfdi[agl_periode]))

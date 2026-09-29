@@ -1,0 +1,12 @@
+{
+  "mode": "vide",
+  "date_extraction": "",
+  "message": "Base vide a l'import. Chargez via plateforme (Dataverse Import / FA-01). Voir docs/CHARGEMENT-PLATEFORME.md",
+  "tables": {
+    "agl_dossierguce": 0,
+    "agl_dossierfdi": 0,
+    "agl_dossierrfcv": 0,
+    "agl_dossierspot": 0,
+    "agl_ecart": 0
+  }
+}

@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml version="9.2.0.0" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SolutionManifest>
+    <!-- Unique Name of Cds Solution-->
+    <UniqueName>CroisementImportAGL</UniqueName>
+    <LocalizedNames>
+      <!-- Localized Solution Name in language code -->
+      <LocalizedName description="Croisement Import AGL" languagecode="1033" />
+      <LocalizedName description="Croisement Import AGL" languagecode="1036" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="Rapprochement FDI et RFCV - GUCE / SPOT / OpenTrade. Socle Dataverse + app pilotee + ingestion." languagecode="1033" />
+      <Description description="Rapprochement FDI et RFCV - GUCE / SPOT / OpenTrade. Socle Dataverse + app pilotée + ingestion." languagecode="1036" />
+    </Descriptions>
+    <Version>1.1.0.0</Version>
+    <!-- Solution Package Type: Unmanaged(0)/Managed(1)/Both(2)-->
+    <Managed>0</Managed>
+    <Publisher>
+      <!-- Unique Publisher Name of Cds Solution -->
+      <UniqueName>AfricaGlobalLogistics</UniqueName>
+      <LocalizedNames>
+        <!-- Localized Cds Publisher Name in language code-->
+        <LocalizedName description="Africa Global Logistics" languagecode="1033" />
+      </LocalizedNames>
+      <Descriptions>
+        <!-- Description of Cds Publisher in language code -->
+        <Description description="Africa Global Logistics - Editeur solution Croisement Import (GUCE/SPOT/OpenTrade)" languagecode="1033" />
+      </Descriptions>
+      <EMailAddress xsi:nil="true"></EMailAddress>
+      <SupportingWebsiteUrl xsi:nil="true"></SupportingWebsiteUrl>
+      <!-- Customization Prefix for the Cds Publisher-->
+      <CustomizationPrefix>agl</CustomizationPrefix>
+      <!-- Derived Option Value Prefix for the Customization Prefix of Cds Publisher -->
+      <CustomizationOptionValuePrefix>99402</CustomizationOptionValuePrefix>
+      <Addresses>
+        <!-- Address of the Publisher-->
+        <Address>
+          <AddressNumber>1</AddressNumber>
+          <AddressTypeCode>1</AddressTypeCode>
+          <City xsi:nil="true"></City>
+          <County xsi:nil="true"></County>
+          <Country xsi:nil="true"></Country>
+          <Fax xsi:nil="true"></Fax>
+          <FreightTermsCode xsi:nil="true"></FreightTermsCode>
+          <ImportSequenceNumber xsi:nil="true"></ImportSequenceNumber>
+          <Latitude xsi:nil="true"></Latitude>
+          <Line1 xsi:nil="true"></Line1>
+          <Line2 xsi:nil="true"></Line2>
+          <Line3 xsi:nil="true"></Line3>
+          <Longitude xsi:nil="true"></Longitude>
+          <Name xsi:nil="true"></Name>
+          <PostalCode xsi:nil="true"></PostalCode>
+          <PostOfficeBox xsi:nil="true"></PostOfficeBox>
+          <PrimaryContactName xsi:nil="true"></PrimaryContactName>
+          <ShippingMethodCode>1</ShippingMethodCode>
+          <StateOrProvince xsi:nil="true"></StateOrProvince>
+          <Telephone1 xsi:nil="true"></Telephone1>
+          <Telephone2 xsi:nil="true"></Telephone2>
+          <Telephone3 xsi:nil="true"></Telephone3>
+          <TimeZoneRuleVersionNumber xsi:nil="true"></TimeZoneRuleVersionNumber>
+          <UPSZone xsi:nil="true"></UPSZone>
+          <UTCOffset xsi:nil="true"></UTCOffset>
+          <UTCConversionTimeZoneCode xsi:nil="true"></UTCConversionTimeZoneCode>
+        </Address>
+        <Address>
+          <AddressNumber>2</AddressNumber>
+          <AddressTypeCode>1</AddressTypeCode>
+          <City xsi:nil="true"></City>
+          <County xsi:nil="true"></County>
+          <Country xsi:nil="true"></Country>
+          <Fax xsi:nil="true"></Fax>
+          <FreightTermsCode xsi:nil="true"></FreightTermsCode>
+          <ImportSequenceNumber xsi:nil="true"></ImportSequenceNumber>
+          <Latitude xsi:nil="true"></Latitude>
+          <Line1 xsi:nil="true"></Line1>
+          <Line2 xsi:nil="true"></Line2>
+          <Line3 xsi:nil="true"></Line3>
+          <Longitude xsi:nil="true"></Longitude>
+          <Name xsi:nil="true"></Name>
+          <PostalCode xsi:nil="true"></PostalCode>
+          <PostOfficeBox xsi:nil="true"></PostOfficeBox>
+          <PrimaryContactName xsi:nil="true"></PrimaryContactName>
+          <ShippingMethodCode>1</ShippingMethodCode>
+          <StateOrProvince xsi:nil="true"></StateOrProvince>
+          <Telephone1 xsi:nil="true"></Telephone1>
+          <Telephone2 xsi:nil="true"></Telephone2>
+          <Telephone3 xsi:nil="true"></Telephone3>
+          <TimeZoneRuleVersionNumber xsi:nil="true"></TimeZoneRuleVersionNumber>
+          <UPSZone xsi:nil="true"></UPSZone>
+          <UTCOffset xsi:nil="true"></UTCOffset>
+          <UTCConversionTimeZoneCode xsi:nil="true"></UTCConversionTimeZoneCode>
+        </Address>
+      </Addresses>
+    </Publisher>
+    <RootComponents>
+      <RootComponent type="1" schemaName="agl_dossierguce" behavior="0" />
+      <RootComponent type="1" schemaName="agl_dossierfdi" behavior="0" />
+      <RootComponent type="1" schemaName="agl_dossierrfcv" behavior="0" />
+      <RootComponent type="1" schemaName="agl_dossierspot" behavior="0" />
+      <RootComponent type="1" schemaName="agl_ecart" behavior="0" />
+      <RootComponent type="1" schemaName="agl_fichiersource" behavior="0" />
+      <RootComponent type="1" schemaName="agl_client" behavior="0" />
+      <RootComponent type="2" id="{0AB66B9F-1815-5295-A073-D880CC43F1BB}" behavior="0" />
+      <RootComponent type="2" id="{4BD9B82F-5326-5BAA-880A-6498AF29E737}" behavior="0" />
+      <RootComponent type="2" id="{09749F21-AFF5-5E75-9EC5-19550582295A}" behavior="0" />
+      <RootComponent type="2" id="{D63A981A-7099-5E38-B482-2501AA06A5F4}" behavior="0" />
+      <RootComponent type="2" id="{6982593C-228C-523B-8E4A-D85628F56F8A}" behavior="0" />
+      <RootComponent type="2" id="{4EC5AF33-CA58-5581-BB28-15FB1BCD5F39}" behavior="0" />
+      <RootComponent type="2" id="{5F3568D6-9C00-5077-96B5-955FFCD143DF}" behavior="0" />
+      <RootComponent type="2" id="{B86773EC-1B39-5711-8519-C315DC6CF750}" behavior="0" />
+      <RootComponent type="2" id="{F234CB67-7B79-5A68-BBB8-844E864E8769}" behavior="0" />
+      <RootComponent type="2" id="{9983FF8A-9147-581F-8B86-56DACBF59521}" behavior="0" />
+      <RootComponent type="2" id="{11E9592D-546C-52BA-8C4F-FCB6A1902BF2}" behavior="0" />
+      <RootComponent type="2" id="{4D4E4503-0A1F-5BE7-AF29-4552B678CBF1}" behavior="0" />
+      <RootComponent type="2" id="{D99D4352-97F9-5CC1-BAEF-2147853E56CE}" behavior="0" />
+      <RootComponent type="2" id="{29A456E9-DF3D-5D17-A03C-ADC98A65409B}" behavior="0" />
+      <RootComponent type="2" id="{C72A79D6-3C27-5253-9724-DA02ADBE80A0}" behavior="0" />
+      <RootComponent type="2" id="{6094AF43-0E4C-5EB1-957F-3823A74E2856}" behavior="0" />
+      <RootComponent type="2" id="{A1CA7178-14A9-5879-B2F5-7029EA6113C9}" behavior="0" />
+      <RootComponent type="2" id="{A21C57C8-624C-53BF-8232-ED59D37572C3}" behavior="0" />
+      <RootComponent type="2" id="{D45012ED-A9E5-5300-97BE-F2C035B928D8}" behavior="0" />
+      <RootComponent type="2" id="{E2B4BEA1-F75A-549E-8B5F-8420540495DC}" behavior="0" />
+      <RootComponent type="2" id="{A0B7D95B-6185-55E7-9024-4640DB5C8530}" behavior="0" />
+      <RootComponent type="2" id="{834C2DF0-2786-50A7-8C6B-39BEDB49ADFB}" behavior="0" />
+      <RootComponent type="2" id="{8D6093EA-ED3B-5373-8C7D-55EC4DF51BB9}" behavior="0" />
+      <RootComponent type="2" id="{4E645A20-0632-5A62-8C01-8C019EEBD269}" behavior="0" />
+      <RootComponent type="2" id="{4751F7DE-8A6F-54BC-8721-B74C74DBF078}" behavior="0" />
+      <RootComponent type="2" id="{445CBE1B-434A-51B2-AEE7-922FDA1A8F4C}" behavior="0" />
+      <RootComponent type="2" id="{26CE7EDC-C8C8-5D36-88C0-DFCF1C90E56F}" behavior="0" />
+      <RootComponent type="2" id="{A99669AF-4D48-500E-973A-7F8618CEB77F}" behavior="0" />
+      <RootComponent type="2" id="{FA9134C2-126B-5E5E-9672-21C961D014A2}" behavior="0" />
+      <RootComponent type="2" id="{A29C4D3A-42B5-5D22-A78E-78CEFC6D0193}" behavior="0" />
+      <RootComponent type="2" id="{D38DBC24-27C9-54A4-8994-EF2756F718DE}" behavior="0" />
+      <RootComponent type="2" id="{D55CE9E8-2E0A-56AC-8B7C-E21F27C3F6D5}" behavior="0" />
+      <RootComponent type="2" id="{92A33195-7DFA-51A5-8CC0-5FC13A2904F1}" behavior="0" />
+      <RootComponent type="2" id="{107AB588-9A14-5635-881D-D72789C5D2B4}" behavior="0" />
+      <RootComponent type="2" id="{D0DC45F0-C19E-5622-9FC8-6A9FDCE02EE5}" behavior="0" />
+      <RootComponent type="2" id="{19C155C4-D0E4-5534-94D6-A78550E75DB0}" behavior="0" />
+      <RootComponent type="2" id="{3A8A0E1C-AE92-5571-AF46-67A32FAB1F09}" behavior="0" />
+      <RootComponent type="2" id="{5BB8FD52-9EBA-5585-8DCD-A45928CA8F91}" behavior="0" />
+      <RootComponent type="2" id="{D1E70B75-0A5A-5778-98D3-AC35E0D9673A}" behavior="0" />
+      <RootComponent type="2" id="{A739B1AE-D8AF-505A-809C-AD4AA82BF339}" behavior="0" />
+      <RootComponent type="2" id="{7C9C7977-3DD6-5E55-9DED-CEBB2A592DB7}" behavior="0" />
+      <RootComponent type="2" id="{A6DDBCCE-D793-50ED-9D53-689B67EC667A}" behavior="0" />
+      <RootComponent type="2" id="{FFCA05EA-9CA6-552B-96A5-60E558745D58}" behavior="0" />
+      <RootComponent type="2" id="{11FC0E91-62DF-56EE-8076-C4185326C573}" behavior="0" />
+      <RootComponent type="2" id="{9EB19086-E2FC-5181-82DE-E47C3C605255}" behavior="0" />
+      <RootComponent type="2" id="{82D198F0-145B-54D0-BD48-8C1F4EAC8014}" behavior="0" />
+      <RootComponent type="2" id="{6E3D5982-9F2A-5FEC-B6FE-68B12198D809}" behavior="0" />
+      <RootComponent type="2" id="{7FC13B1C-3378-561E-AD9D-CD7D8B2E7F20}" behavior="0" />
+      <RootComponent type="2" id="{22E61A12-38C2-58D7-9502-08819667425B}" behavior="0" />
+      <RootComponent type="2" id="{B181203A-D6C4-5B7C-88CD-923BAB1E77EB}" behavior="0" />
+      <RootComponent type="2" id="{8CE4C3AF-22F0-503A-A3A9-9710681CBB94}" behavior="0" />
+      <RootComponent type="2" id="{852AD32A-05C5-5C08-9B2E-4D19AC3BA077}" behavior="0" />
+      <RootComponent type="2" id="{C1BB3A7F-08FA-5568-B689-DA9FE33D0488}" behavior="0" />
+      <RootComponent type="2" id="{6A3DFEA9-9CA5-58F1-85A1-5E84A58DBAF6}" behavior="0" />
+      <RootComponent type="2" id="{0F042FE2-8B4E-5472-B50F-7A1057D5B68B}" behavior="0" />
+      <RootComponent type="2" id="{F8B480E2-D606-50B4-A55B-6CF71B70703D}" behavior="0" />
+      <RootComponent type="2" id="{FC6FD9B2-1666-5E41-B3E5-EC7A2533C7EB}" behavior="0" />
+      <RootComponent type="2" id="{C3B862A1-08AA-552B-AC4F-6A2D4D3D582B}" behavior="0" />
+      <RootComponent type="2" id="{5C99B7E1-D14F-59DF-ABB7-391384E26606}" behavior="0" />
+      <RootComponent type="2" id="{D8EA7C49-45A8-576C-8340-FBF0E3BE3B1D}" behavior="0" />
+      <RootComponent type="2" id="{D5D4AA34-9878-5356-A010-63B6DDBCBBDF}" behavior="0" />
+      <RootComponent type="2" id="{40A4D8F9-D435-5632-B698-AEC008CB4D5F}" behavior="0" />
+      <RootComponent type="2" id="{23AB8D4E-476D-572D-AEC8-DF19740F6CFF}" behavior="0" />
+      <RootComponent type="2" id="{B7F54F97-96CE-5F76-B5E3-54C355752799}" behavior="0" />
+      <RootComponent type="2" id="{A8A8BACC-B3D4-528A-8334-1879CA99892C}" behavior="0" />
+      <RootComponent type="2" id="{32E9DB45-0574-58EF-8C83-8E90E27D4A94}" behavior="0" />
+      <RootComponent type="2" id="{139A16E0-2029-55D4-A0A0-065B5099FF2B}" behavior="0" />
+      <RootComponent type="2" id="{BB1359D6-2ECB-53D4-86B3-DF6320C526D0}" behavior="0" />
+      <RootComponent type="2" id="{EF876A30-A7F5-540D-B4EA-616BD87FC6B0}" behavior="0" />
+      <RootComponent type="2" id="{AE32EA2D-E55A-51AD-AF4E-B4AA1C3A25B3}" behavior="0" />
+      <RootComponent type="2" id="{D29948D7-2305-524E-8F55-236E38002AAF}" behavior="0" />
+      <RootComponent type="2" id="{9688143E-BBE4-5068-A8F2-4C9919C7BCB9}" behavior="0" />
+      <RootComponent type="2" id="{1EEC4959-31C1-5A8F-B4B6-50FE545CFAE8}" behavior="0" />
+      <RootComponent type="2" id="{8C839A67-9D09-5BEC-A187-EB11A9156280}" behavior="0" />
+      <RootComponent type="2" id="{8FCFD0F0-5C13-5E61-9BAC-3F2B39521532}" behavior="0" />
+      <RootComponent type="2" id="{54673F90-EEA6-5BD1-9FBF-724B514FA4D0}" behavior="0" />
+      <RootComponent type="2" id="{3C9AF403-854A-5D47-9276-F4D411EE89AA}" behavior="0" />
+      <RootComponent type="2" id="{EA5A46C6-7126-549B-96C5-284FF6C87DC1}" behavior="0" />
+      <RootComponent type="2" id="{C502138E-7144-54A5-9D00-272F81AB802D}" behavior="0" />
+      <RootComponent type="2" id="{CDBAE1ED-CB1B-5202-A5EB-BF26C5013376}" behavior="0" />
+      <RootComponent type="2" id="{A4A343C2-6778-50F0-A827-B08E83AE03DD}" behavior="0" />
+      <RootComponent type="2" id="{5E982021-9A89-5594-BBCB-876EDF88C860}" behavior="0" />
+      <RootComponent type="2" id="{7D00C038-7E50-5A70-8AB0-3FF83F1682C4}" behavior="0" />
+      <RootComponent type="2" id="{415305F8-941E-5E5E-A560-4E5ED0EBF2B0}" behavior="0" />
+      <RootComponent type="2" id="{BC460710-6249-56D6-A7A3-BF22B4315492}" behavior="0" />
+      <RootComponent type="2" id="{B35823E3-9945-531C-8E88-A59CBE920B22}" behavior="0" />
+      <RootComponent type="2" id="{586C958F-2B1B-5A68-90E6-E267DB2A74ED}" behavior="0" />
+      <RootComponent type="2" id="{8E92C742-4EAF-521B-8411-60CECC322830}" behavior="0" />
+      <RootComponent type="2" id="{3BCF7292-CA91-5A05-B769-7C271F274024}" behavior="0" />
+      <RootComponent type="2" id="{863E8740-5022-5F9B-AAE0-86D93E11EE82}" behavior="0" />
+      <RootComponent type="2" id="{C53AC681-1437-53C3-BD9E-52093230F4B3}" behavior="0" />
+      <RootComponent type="2" id="{5392834A-EEBD-5F56-B88B-CA7CADDA060A}" behavior="0" />
+      <RootComponent type="2" id="{0C730C92-8EBC-59B0-8BC6-B721A4789911}" behavior="0" />
+      <RootComponent type="2" id="{FF04597E-C09C-5BBC-8E4A-BDE50421CE9C}" behavior="0" />
+      <RootComponent type="2" id="{AD3BB15E-A752-51BE-A0AE-3F588ACACCA6}" behavior="0" />
+      <RootComponent type="2" id="{93186350-F102-5979-9886-22D668B2BA68}" behavior="0" />
+      <RootComponent type="2" id="{F2181D65-54B1-5254-AA4E-389A668EDA3B}" behavior="0" />
+      <RootComponent type="2" id="{6E6D1A2E-4D65-5D99-B598-BF206655EDAF}" behavior="0" />
+      <RootComponent type="2" id="{FDC2037E-FF9D-5467-8E15-75DB8A0DC5F6}" behavior="0" />
+      <RootComponent type="2" id="{9560119F-9F1B-5B1B-A562-7E361BD3BECD}" behavior="0" />
+      <RootComponent type="2" id="{A2FBB55A-5B45-508C-AF9D-A1CD4A163B7E}" behavior="0" />
+      <RootComponent type="2" id="{9D6E7360-344B-577F-A75D-FAD44087CAB2}" behavior="0" />
+      <RootComponent type="2" id="{885EBCEB-B02E-53A9-AB24-4BEFE27E3F8B}" behavior="0" />
+      <RootComponent type="2" id="{B31C9F69-D26C-535F-A48A-1877DFE83FDF}" behavior="0" />
+      <RootComponent type="3" schemaName="agl_dossierguce_agl_dossierfdi" behavior="0" />
+      <RootComponent type="3" schemaName="agl_dossierguce_agl_dossierrfcv" behavior="0" />
+      <RootComponent type="3" schemaName="agl_dossierspot_agl_dossierrfcv" behavior="0" />
+      <RootComponent type="3" schemaName="agl_client_agl_dossierfdi" behavior="0" />
+      <RootComponent type="3" schemaName="agl_client_agl_dossierrfcv" behavior="0" />
+      <RootComponent type="3" schemaName="agl_fichiersource_agl_dossierguce" behavior="0" />
+      <RootComponent type="3" schemaName="agl_fichiersource_agl_dossierfdi" behavior="0" />
+      <RootComponent type="3" schemaName="agl_fichiersource_agl_dossierrfcv" behavior="0" />
+      <RootComponent type="3" schemaName="agl_fichiersource_agl_dossierspot" behavior="0" />
+      <RootComponent type="3" schemaName="agl_dossierguce_agl_ecart" behavior="0" />
+      <RootComponent type="3" schemaName="agl_dossierfdi_agl_ecart" behavior="0" />
+      <RootComponent type="3" schemaName="agl_dossierrfcv_agl_ecart" behavior="0" />
+      <RootComponent type="3" schemaName="agl_dossierspot_agl_ecart" behavior="0" />
+      <RootComponent type="60" id="{5394D058-5354-5AF7-BC7C-1D8CE3D98BBE}" behavior="0" />
+      <RootComponent type="60" id="{787ACD46-93A1-5987-9EBA-689E865CC409}" behavior="0" />
+      <RootComponent type="60" id="{D200C1DE-F43C-502D-B37E-06B552B0EA1B}" behavior="0" />
+      <RootComponent type="60" id="{E7ECBCE2-ED17-50FA-95C2-5D2089FE0426}" behavior="0" />
+      <RootComponent type="60" id="{38E7B8F6-3942-5499-8BBF-7A0B59886696}" behavior="0" />
+      <RootComponent type="60" id="{D0A81F9A-F571-56EA-993B-CAF6AC5793CD}" behavior="0" />
+      <RootComponent type="60" id="{0BEF7CA6-AF88-5F54-86DE-AB1F7DAF446D}" behavior="0" />
+      <RootComponent type="26" id="{2B72F8BA-5048-556F-BC33-A5AC666C19EB}" behavior="0" />
+      <RootComponent type="26" id="{C49336F7-55D1-55C5-83D0-0B31509E9048}" behavior="0" />
+      <RootComponent type="26" id="{0E0C1B42-4F40-592F-AB69-70CFD31A63AC}" behavior="0" />
+      <RootComponent type="26" id="{E1CBC2DA-4D53-523B-A4AA-4A356F3A063A}" behavior="0" />
+      <RootComponent type="26" id="{2838050F-599B-53CE-9DF7-42AB4D187034}" behavior="0" />
+      <RootComponent type="26" id="{C3711F7B-A621-5C3E-BF1C-50282BC57769}" behavior="0" />
+      <RootComponent type="26" id="{0B976607-4A34-547B-8F3B-BC319058CFBA}" behavior="0" />
+      <RootComponent type="26" id="{2508FCA1-2040-529B-A5A0-1C183525B959}" behavior="0" />
+      <RootComponent type="26" id="{42ABD9B9-C608-506E-8CBC-9A90B74D9370}" behavior="0" />
+      <RootComponent type="26" id="{24F7C667-18F1-5ABF-8DF5-5276F99CF0FE}" behavior="0" />
+      <RootComponent type="26" id="{66FD160C-7C92-5DC1-AB83-FFCE911E9823}" behavior="0" />
+      <RootComponent type="26" id="{AC6AD0A6-7C35-5880-9025-0C821B81244C}" behavior="0" />
+      <RootComponent type="26" id="{A8E8088B-43D7-5F12-AA8C-1C9DBE65E19A}" behavior="0" />
+      <RootComponent type="26" id="{961D24EF-9AD1-52EE-9074-69403C816616}" behavior="0" />
+      <RootComponent type="26" id="{1404149F-B4D4-58D5-9C0F-35C4115E0390}" behavior="0" />
+      <RootComponent type="26" id="{6174802B-5082-546B-A659-4084CF2B89B2}" behavior="0" />
+      <RootComponent type="26" id="{561FDE3A-E95C-5D78-848E-C5A2BCE9145D}" behavior="0" />
+      <RootComponent type="26" id="{2DC9B96E-3FCC-50D7-8198-673BE147E1AB}" behavior="0" />
+      <RootComponent type="26" id="{2D6354C4-15C5-522E-A602-C7F9F5D980D9}" behavior="0" />
+    </RootComponents>
+    <MissingDependencies />
+  </SolutionManifest>
+</ImportExportXml>

@@ -1,0 +1,9 @@
+{
+  "powerPlatform.performPacCliVersionCheck": true,
+  "files.associations": {
+    "*.cdsproj": "xml",
+    "Solution.xml": "xml",
+    "Customizations.xml": "xml"
+  },
+  "python.defaultInterpreterPath": "python3"
+}

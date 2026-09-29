@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "microsoft-IsvExpTools.powerplatform-vscode",
+    "ms-vscode.PowerShell",
+    "ms-python.python",
+    "redhat.vscode-yaml"
+  ]
+}

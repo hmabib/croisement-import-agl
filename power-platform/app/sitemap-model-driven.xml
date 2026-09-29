@@ -1,0 +1,41 @@
+<!-- Plan de site model-driven — import via Concepteur d'app > Plan de site -->
+<SiteMap xmlns="http://schemas.microsoft.com/LineupSiteMap">
+  <Area Id="Pilotage" Title="Pilotage" Icon="Activity">
+    <Group Id="Supervision" Title="Supervision">
+      <SubArea Id="Dashboard" Title="Tableau de bord" DashboardId="00000000-0000-0000-0000-000000000000" />
+      <SubArea Id="EcartsOuverts" Title="File Ouverte" Entity="agl_ecart" View="File Ouverte" />
+      <SubArea Id="TopClients" Title="Top clients à relancer" Entity="agl_dossierfdi" View="Overdue par client" />
+    </Group>
+  </Area>
+  <Area Id="Dossiers" Title="Dossiers">
+    <Group Id="G1" Title="Référentiels">
+      <SubArea Id="GUCE" Title="GUCE" Entity="agl_dossierguce" />
+      <SubArea Id="FDI" Title="FDI" Entity="agl_dossierfdi" />
+      <SubArea Id="RFCV" Title="RFCV" Entity="agl_dossierrfcv" />
+      <SubArea Id="SPOT" Title="SPOT" Entity="agl_dossierspot" />
+      <SubArea Id="Clients" Title="Clients" Entity="agl_client" />
+    </Group>
+  </Area>
+  <Area Id="Ecarts" Title="Écarts">
+    <Group Id="G2" Title="Traitement">
+      <SubArea Id="FileOuverte" Title="File Ouverte" Entity="agl_ecart" View="File Ouverte" />
+      <SubArea Id="ParCategorie" Title="Par catégorie" Entity="agl_ecart" View="Par catégorie" />
+      <SubArea Id="MesEcarts" Title="Mes écarts" Entity="agl_ecart" View="Mes écarts" />
+      <SubArea Id="C1" Title="C1 · GUCE sans écho" Entity="agl_dossierguce" View="C1 · GUCE sans écho système" />
+      <SubArea Id="C2" Title="C2 · Factures AGL" Entity="agl_ecart" View="C2 · Factures AGL" />
+    </Group>
+  </Area>
+  <Area Id="Imports" Title="Imports">
+    <Group Id="G3" Title="Traçabilité">
+      <SubArea Id="Fichiers" Title="Fichiers sources" Entity="agl_fichiersource" />
+      <SubArea Id="NewImport" Title="Nouvelle ingestion" Url="$webresource:agl_ingestion_help.html" />
+    </Group>
+  </Area>
+  <Area Id="Recherche" Title="Recherche N°">
+    <Group Id="G4" Title="Unifiée">
+      <SubArea Id="SearchFDI" Title="Par N° FDI" Entity="agl_dossierfdi" />
+      <SubArea Id="SearchRFCV" Title="Par N° RFCV / Transaction" Entity="agl_dossierrfcv" />
+      <SubArea Id="SearchGUCE" Title="Par N° GUCE" Entity="agl_dossierguce" />
+    </Group>
+  </Area>
+</SiteMap>

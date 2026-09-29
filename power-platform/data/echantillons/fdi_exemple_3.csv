@@ -1,0 +1,2 @@
+﻿Reference,Date_creation,Client,Date_demande,Date_docs_complets,No_facture,Facture_AGL,Facture_AGL_norm,Periode,Date_soumission,Date_FDI,No_FDI,No_FDI_norm,Date_transmission,Etape,Agent,Observations,Echeance,SLA,Unite,Statut_rapprochement,Etat_controle
+EXEMPLE-FDI-001,05/08/2026,CLIENT EXEMPLE,05/08/2026,,FAC-EX-001,Non,,2026-08,,,,,,Brouillon,Agent Exemple,Exemple mapping,,not_evaluable,COM 99,Sans_No,A_VERIFIER

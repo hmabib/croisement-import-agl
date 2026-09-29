@@ -1,0 +1,16 @@
+{
+  "name": "FA-02 Calcul croisement + C1/C2/C3 (v1.1)",
+  "solution": "CroisementImportAGL",
+  "trigger": { "type": "Dataverse When a row is added or modified (agl_dossierfdi, agl_dossierrfcv, agl_dossierguce, agl_dossierspot)", "plus": "Scheduled 22:00" },
+  "actions": [
+    { "step": 0, "compute": "Periode YYYY-MM (Date_demande sinon Date_creation / DATE_CREATION GUCE) + Facture_AGL (Oui si AGL dans No_facture ou Client, norm sans separateurs)" },
+    { "step": 1, "if": "cle_norm vide", "then": "Normaliser (FDI chiffres / RFCV RCS conserve / SPOT base avant //)" },
+    { "step": 2, "dataverse": "ListRows agl_dossierguce", "filter": "agl_numerodemande eq '<cle_norm>'" },
+    { "step": 3, "if": "GUCE trouve", "then": ["Set lookup agl_dossierguce", "Set agl_statutrapprochement=Rapproche_GUCE", "C1: Presence=Present, Etat=RAPPROCHE", "Resolve ecarts lies (Resolu)"] },
+    { "step": 4, "else": "Create agl_ecart si absent (dedupliquer cle_norm + categorie) : FDI_SANS_GUCE | RFCV_SANS_GUCE_A_VERIFIER | SANS_ECHO_SPOT" },
+    { "step": 5, "C1_invers": "Pour chaque GUCE : chercher dans FDI (agl_nofdi_norm) + RFCV (digits agl_norfcv_norm). Si absent -> Presence=Absent, Etat=ORPHELIN_A_VERIFIER + Create GUCE_SANS_ECHO_SYSTEME. Sinon Present/RAPPROCHE." },
+    { "step": 6, "C2": "Si agl_facture_agl=Oui et (pas de GUCE ou doublon) -> Create FACTURE_AGL_A_VERIFIER. Pret pour colonne officielle prochaines extractions (changer mapping only)." },
+    { "step": 7, "C3": "Recopier agl_periode vers agl_ecart. Vues + BI filtrees Du/Au." },
+    { "step": 8, "if": "Brouillon sans No et Date_demande > 15j", "then": "Create BROUILLON_SANS_NUMERO priorite Haute" }
+  ]
+}

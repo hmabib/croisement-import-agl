@@ -1,0 +1,16 @@
+{
+  "name": "FA-01 Ingestion Excel vers Dataverse",
+  "solution": "CroisementImportAGL",
+  "trigger": { "type": "Scheduled + When a file is created (SharePoint /Imports)", "recurrence": "0 6 * * *" },
+  "parameters": [{ "name": "TypeFichier", "type": "string", "allowed": ["GUCE", "FDI", "RFCV", "SPOT"] }],
+  "actions": [
+    { "step": 1, "connector": "SharePoint", "op": "ListFiles", "folder": "/Imports" },
+    { "step": 2, "connector": "ExcelOnline", "op": "ListRows", "note": "Mettre les CSV/XLSX en Table Excel (Ctrl+T)" },
+    { "step": 3, "connector": "ApplyToEach", "do": [
+      { "compose": "cle_norm", "FDI": "chiffres(N° FDI)", "RFCV": "toUpper(sans espaces-tirets, RCS conservé)", "SPOT": "first(split(N° Dossier,'/'))" },
+      { "dataverse": "Upsert", "table": "agl_dossierfdi | agl_dossierrfcv | agl_dossierguce | agl_dossierspot", "alternateKey": "agl_reference | agl_numerodemande | agl_nodossier_norm" },
+      { "dataverse": "Create agl_fichiersource", "fields": "nom, type, lignes, hash, statut" }
+    ]},
+    { "step": 4, "onFailure": { "dataverse": "Create agl_ecart IMPORT_ERREUR", "notify": "Email superviseur" } }
+  ]
+}
